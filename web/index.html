@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CancelKit — Subscription Cancellation API</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --border: #262626;
+            --text: #fafafa;
+            --muted: #a1a1aa;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --green: #22c55e;
+            --red: #ef4444;
+            --orange: #f97316;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Nav */
+        nav {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            backdrop-filter: blur(12px);
+            background: rgba(10, 10, 10, 0.8);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 1100px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 24px;
+        }
+        .logo { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 28px; align-items: center; }
+        .nav-links a { color: var(--muted); font-size: 0.9rem; }
+        .nav-links a:hover { color: var(--text); text-decoration: none; }
+        .btn-sm {
+            background: var(--accent); color: #fff;
+            padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+        }
+        .btn-sm:hover { background: var(--accent-hover); text-decoration: none; }
+
+        /* Hero */
+        .hero {
+            padding: 160px 24px 80px; text-align: center;
+            max-width: 800px; margin: 0 auto;
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.12); color: var(--accent);
+            padding: 6px 16px; border-radius: 100px;
+            font-size: 0.8rem; font-weight: 600; letter-spacing: 0.03em;
+            margin-bottom: 24px; border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        h1 {
+            font-size: 3.2rem; font-weight: 800;
+            letter-spacing: -0.035em; line-height: 1.1;
+            margin-bottom: 20px;
+        }
+        .hero p { font-size: 1.15rem; color: var(--muted); max-width: 560px; margin: 0 auto 36px; }
+        .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            padding: 14px 30px; border-radius: 10px; font-size: 0.95rem;
+            font-weight: 600; border: none; cursor: pointer; display: inline-block;
+        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); text-decoration: none; }
+        .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+        .btn-outline:hover { border-color: var(--muted); text-decoration: none; }
+
+        /* Stats */
+        .stats {
+            display: flex; gap: 48px; justify-content: center;
+            padding: 40px 24px; max-width: 700px; margin: 0 auto;
+        }
+        .stat { text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: 800; color: var(--green); }
+        .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+        /* Code Block */
+        .code-section {
+            max-width: 700px; margin: 60px auto; padding: 0 24px;
+        }
+        .code-section h2 {
+            font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;
+            text-align: center; color: var(--muted);
+        }
+        .code-block {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; overflow: hidden;
+        }
+        .code-header {
+            padding: 12px 20px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .code-header span { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+        .code-header .method { color: var(--green); }
+        pre {
+            padding: 20px; overflow-x: auto; font-size: 0.85rem;
+            font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+            line-height: 1.7; color: var(--muted);
+        }
+        pre .key { color: var(--accent); }
+        pre .str { color: var(--green); }
+        pre .num { color: var(--orange); }
+
+        /* Features */
+        .features {
+            max-width: 1100px; margin: 80px auto; padding: 0 24px;
+        }
+        .features h2 {
+            text-align: center; font-size: 2rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-bottom: 48px;
+        }
+        .features-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .feature-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 28px;
+        }
+        .feature-icon { font-size: 1.5rem; margin-bottom: 12px; }
+        .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .feature-card p { font-size: 0.85rem; color: var(--muted); }
+
+        /* Pricing */
+        .pricing {
+            max-width: 1100px; margin: 80px auto; padding: 0 24px;
+        }
+        .pricing h2 {
+            text-align: center; font-size: 2rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-bottom: 48px;
+        }
+        .pricing-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        .price-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 28px; position: relative;
+        }
+        .price-card.popular { border-color: var(--accent); }
+        .price-card.popular::after {
+            content: 'POPULAR';
+            position: absolute; top: -10px; right: 20px;
+            background: var(--accent); color: #fff;
+            padding: 2px 12px; border-radius: 4px;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .price-card h3 { font-size: 0.9rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+        .price { font-size: 2rem; font-weight: 800; margin-bottom: 4px; }
+        .price span { font-size: 0.85rem; font-weight: 400; color: var(--muted); }
+        .price-desc { font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; }
+        .price-features { list-style: none; }
+        .price-features li {
+            font-size: 0.82rem; color: var(--muted); padding: 6px 0;
+            border-top: 1px solid var(--border);
+        }
+        .price-features li::before { content: '✓ '; color: var(--green); font-weight: 700; }
+
+        /* Use Cases */
+        .use-cases {
+            max-width: 1100px; margin: 80px auto; padding: 0 24px;
+        }
+        .use-cases h2 {
+            text-align: center; font-size: 2rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-bottom: 48px;
+        }
+        .use-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .use-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 28px;
+        }
+        .use-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .use-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+        .use-card .tag {
+            display: inline-block; background: rgba(59, 130, 246, 0.1);
+            color: var(--accent); padding: 3px 10px; border-radius: 4px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+
+        /* CTA */
+        .cta {
+            text-align: center; padding: 80px 24px;
+            max-width: 600px; margin: 0 auto;
+        }
+        .cta h2 { font-size: 2rem; font-weight: 800; margin-bottom: 16px; }
+        .cta p { color: var(--muted); margin-bottom: 32px; }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 24px; text-align: center;
+            color: var(--muted); font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            .features-grid, .pricing-grid { grid-template-columns: 1fr; }
+            .use-grid { grid-template-columns: 1fr; }
+            .stats { gap: 24px; flex-wrap: wrap; }
+            .nav-links a:not(.btn-sm) { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <div class="logo">Cancel<span>Kit</span></div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="/docs">API Docs</a>
+                <a href="/docs" class="btn-sm">Get API Key</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="badge">API-FIRST CANCELLATION INFRASTRUCTURE</div>
+        <h1>Cancel any subscription with one API call</h1>
+        <p>Production-ready cancellation paths as a service. We maintain the steps, you get the buttons.</p>
+        <div class="hero-buttons">
+            <a href="/docs" class="btn btn-primary">Get Free API Key</a>
+            <a href="/docs" class="btn btn-outline">View Documentation</a>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="stat-value">40+</div>
+            <div class="stat-label">Services Covered</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">95%</div>
+            <div class="stat-label">Path Accuracy</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">24/7</div>
+            <div class="stat-label">Path Monitoring</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">&lt;50ms</div>
+            <div class="stat-label">Response Time</div>
+        </div>
+    </section>
+
+    <section class="code-section">
+        <h2>One request. Full cancellation path.</h2>
+        <div class="code-block">
+            <div class="code-header">
+                <span><span class="method">GET</span> /v1/cancel/netflix.com</span>
+                <span>Response</span>
+            </div>
+            <pre>{
+  <span class="key">"domain"</span>: <span class="str">"netflix.com"</span>,
+  <span class="key">"service_name"</span>: <span class="str">"Netflix"</span>,
+  <span class="key">"category"</span>: <span class="str">"streaming"</span>,
+  <span class="key">"paths"</span>: [{
+    <span class="key">"method"</span>: <span class="str">"web"</span>,
+    <span class="key">"steps"</span>: [
+      { <span class="key">"action"</span>: <span class="str">"navigate"</span>, <span class="key">"target"</span>: <span class="str">"https://netflix.com/account"</span>, <span class="key">"description"</span>: <span class="str">"Go to Account page"</span> },
+      { <span class="key">"action"</span>: <span class="str">"click"</span>, <span class="key">"target"</span>: <span class="str">"Cancel"</span>, <span class="key">"description"</span>: <span class="str">"Click Cancel"</span> },
+      { <span class="key">"action"</span>: <span class="str">"click"</span>, <span class="key">"target"</span>: <span class="str">"Finish Cancellation"</span>, <span class="key">"description"</span>: <span class="str">"Confirm"</span> }
+    ],
+    <span class="key">"estimated_time_seconds"</span>: <span class="num">120</span>,
+    <span class="key">"difficulty"</span>: <span class="str">"easy"</span>,
+    <span class="key">"confidence"</span>: <span class="num">0.97</span>
+  }]
+}</pre>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h2>Built for modern apps</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">&#9889;</div>
+                <h3>Two-Minute Integration</h3>
+                <p>Simple REST API. Add cancellation flows to your app in minutes, not months. JSON in, JSON out.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#128269;</div>
+                <h3>Always Accurate</h3>
+                <p>We monitor cancellation paths 24/7 and update them when services change their UI or flows.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#128176;</div>
+                <h3>Save 96% vs. DIY</h3>
+                <p>One engineer maintaining paths = $150K/yr. CancelKit API = $6K/yr. Same result, zero maintenance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#128274;</div>
+                <h3>API Key Auth</h3>
+                <p>Simple API key authentication with per-key rate limits. Usage tracking built in.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#128200;</div>
+                <h3>Usage Dashboard</h3>
+                <p>Track your API usage, monitor rate limits, and manage your keys from the dashboard.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#128483;</div>
+                <h3>Multi-Method Paths</h3>
+                <p>Web, phone, email, chat, in-person. Every cancellation method documented and structured.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="use-cases">
+        <h2>Who uses CancelKit?</h2>
+        <div class="use-grid">
+            <div class="use-card">
+                <h3>Fintech & Banking Apps</h3>
+                <p>Help users cancel unwanted subscriptions directly from your app. Increase retention and satisfaction.</p>
+                <span class="tag">Rocket Money</span>
+                <span class="tag">Truebill</span>
+                <span class="tag">Trim</span>
+            </div>
+            <div class="use-card">
+                <h3>Subscription Trackers</h3>
+                <p>Don't just track subscriptions — help users actually cancel them with one click.</p>
+                <span class="tag">PocketGuard</span>
+                <span class="tag">Bobby</span>
+                <span class="tag">Simplifi</span>
+            </div>
+            <div class="use-card">
+                <h3>Privacy Browsers</h3>
+                <p>Build cancellation flows into your browser as a pro-consumer feature. Stand out from competitors.</p>
+                <span class="tag">Brave</span>
+                <span class="tag">Arc</span>
+                <span class="tag">DuckDuckGo</span>
+            </div>
+            <div class="use-card">
+                <h3>Consumer Advocacy</h3>
+                <p>Empower consumers with actual tools to fight dark patterns and predatory subscriptions.</p>
+                <span class="tag">Consumer Reports</span>
+                <span class="tag">NerdWallet</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing" id="pricing">
+        <h2>Simple, transparent pricing</h2>
+        <div class="pricing-grid">
+            <div class="price-card">
+                <h3>Free</h3>
+                <div class="price">$0 <span>/mo</span></div>
+                <div class="price-desc">For side projects and testing</div>
+                <ul class="price-features">
+                    <li>100 requests/day</li>
+                    <li>3,000 requests/month</li>
+                    <li>All services included</li>
+                    <li>Community support</li>
+                </ul>
+            </div>
+            <div class="price-card">
+                <h3>Starter</h3>
+                <div class="price">$199 <span>/mo</span></div>
+                <div class="price-desc">For growing apps</div>
+                <ul class="price-features">
+                    <li>10,000 requests/month</li>
+                    <li>24-hour path updates</li>
+                    <li>Webhook notifications</li>
+                    <li>Email support</li>
+                </ul>
+            </div>
+            <div class="price-card popular">
+                <h3>Growth</h3>
+                <div class="price">$499 <span>/mo</span></div>
+                <div class="price-desc">For production apps</div>
+                <ul class="price-features">
+                    <li>100,000 requests/month</li>
+                    <li>Same-day path updates</li>
+                    <li>Priority support</li>
+                    <li>Custom SLA</li>
+                </ul>
+            </div>
+            <div class="price-card">
+                <h3>Enterprise</h3>
+                <div class="price">$1,499 <span>/mo</span></div>
+                <div class="price-desc">For large-scale apps</div>
+                <ul class="price-features">
+                    <li>Unlimited requests</li>
+                    <li>Dedicated account manager</li>
+                    <li>Custom integrations</li>
+                    <li>99.9% SLA</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <h2>Start canceling subscriptions today</h2>
+        <p>Get your free API key and add cancellation flows to your app in minutes.</p>
+        <a href="/docs" class="btn btn-primary">Get Free API Key</a>
+    </section>
+
+    <footer>
+        &copy; 2026 CancelKit. All rights reserved.
+    </footer>
+</body>
+</html>
