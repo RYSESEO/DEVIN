@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CancelKit — Subscription Intelligence API</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --border: #222222;
+            --text: #e5e5e5;
+            --text-muted: #888888;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --green: #22c55e;
+            --orange: #f97316;
+            --purple: #a855f7;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+        /* Nav */
+        nav {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            background: rgba(10,10,10,0.85); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 24px; max-width: 1200px; margin: 0 auto;
+        }
+        .logo { font-weight: 700; font-size: 1.25rem; color: var(--text); text-decoration: none; }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 24px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text); }
+        .btn {
+            display: inline-block; padding: 10px 20px; border-radius: 8px;
+            font-weight: 600; font-size: 0.9rem; text-decoration: none; transition: all 0.2s;
+        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-outline { border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Hero */
+        .hero {
+            padding: 160px 0 100px; text-align: center;
+            background: radial-gradient(ellipse at top, rgba(59,130,246,0.08), transparent 70%);
+        }
+        .badge {
+            display: inline-block; padding: 6px 14px; border-radius: 20px;
+            background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+            color: var(--accent); font-size: 0.8rem; font-weight: 600; margin-bottom: 24px;
+        }
+        .hero h1 { font-size: 3.5rem; font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
+        .hero h1 .highlight { color: var(--accent); }
+        .hero p { font-size: 1.2rem; color: var(--text-muted); max-width: 640px; margin: 0 auto 32px; }
+        .hero-buttons { display: flex; gap: 12px; justify-content: center; margin-bottom: 48px; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+            max-width: 720px; margin: 0 auto;
+        }
+        .stat { text-align: center; }
+        .stat .number { font-size: 1.75rem; font-weight: 800; color: var(--accent); }
+        .stat .label { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Code Example */
+        .code-section { padding: 80px 0; }
+        .code-section h2 { text-align: center; font-size: 2rem; margin-bottom: 8px; }
+        .code-section .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 40px; }
+        .code-tabs { display: flex; gap: 8px; margin-bottom: 0; }
+        .code-tab {
+            padding: 8px 16px; border-radius: 8px 8px 0 0; font-size: 0.85rem;
+            cursor: pointer; border: 1px solid var(--border); border-bottom: none;
+            background: var(--surface); color: var(--text-muted);
+        }
+        .code-tab.active { background: #1a1a2e; color: var(--accent); border-color: rgba(59,130,246,0.3); }
+        .code-block {
+            background: #1a1a2e; border: 1px solid rgba(59,130,246,0.15);
+            border-radius: 0 var(--radius) var(--radius) var(--radius);
+            padding: 24px; overflow-x: auto; font-size: 0.85rem;
+            font-family: 'SF Mono', 'Fira Code', monospace; line-height: 1.7;
+        }
+        .code-block .comment { color: #6b7280; }
+        .code-block .key { color: #93c5fd; }
+        .code-block .string { color: #86efac; }
+        .code-block .number { color: #fbbf24; }
+        .code-block .method { color: #c084fc; }
+        .code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        /* Features */
+        .features { padding: 80px 0; }
+        .features h2 { text-align: center; font-size: 2rem; margin-bottom: 8px; }
+        .features .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 48px; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .feature-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 28px;
+            transition: border-color 0.2s;
+        }
+        .feature-card:hover { border-color: var(--accent); }
+        .feature-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; margin-bottom: 16px;
+        }
+        .feature-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+        .feature-card p { color: var(--text-muted); font-size: 0.9rem; }
+        .icon-blue { background: rgba(59,130,246,0.15); }
+        .icon-green { background: rgba(34,197,94,0.15); }
+        .icon-orange { background: rgba(249,115,22,0.15); }
+        .icon-purple { background: rgba(168,85,247,0.15); }
+
+        /* Endpoints */
+        .endpoints { padding: 80px 0; }
+        .endpoints h2 { text-align: center; font-size: 2rem; margin-bottom: 8px; }
+        .endpoints .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 48px; }
+        .endpoint-list {
+            max-width: 800px; margin: 0 auto;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden;
+        }
+        .endpoint-row {
+            display: flex; align-items: center; gap: 16px;
+            padding: 16px 24px; border-bottom: 1px solid var(--border);
+        }
+        .endpoint-row:last-child { border-bottom: none; }
+        .method-badge {
+            font-size: 0.75rem; font-weight: 700; padding: 4px 10px;
+            border-radius: 4px; min-width: 48px; text-align: center;
+            font-family: 'SF Mono', monospace;
+        }
+        .method-get { background: rgba(34,197,94,0.15); color: var(--green); }
+        .method-post { background: rgba(59,130,246,0.15); color: var(--accent); }
+        .endpoint-path { font-family: 'SF Mono', monospace; font-size: 0.9rem; flex: 1; }
+        .endpoint-desc { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* Use Cases */
+        .use-cases { padding: 80px 0; }
+        .use-cases h2 { text-align: center; font-size: 2rem; margin-bottom: 8px; }
+        .use-cases .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 48px; }
+        .use-cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .use-case-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 32px;
+        }
+        .use-case-card h3 { font-size: 1.15rem; margin-bottom: 8px; }
+        .use-case-card p { color: var(--text-muted); font-size: 0.9rem; }
+
+        /* Pricing */
+        .pricing { padding: 80px 0; }
+        .pricing h2 { text-align: center; font-size: 2rem; margin-bottom: 8px; }
+        .pricing .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 48px; }
+        .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .pricing-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 28px; text-align: center;
+        }
+        .pricing-card.featured { border-color: var(--accent); position: relative; }
+        .pricing-card.featured::before {
+            content: 'Most Popular';
+            position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: var(--accent); color: #fff; padding: 3px 12px;
+            border-radius: 12px; font-size: 0.7rem; font-weight: 700;
+        }
+        .pricing-card h3 { font-size: 1.1rem; margin-bottom: 8px; }
+        .pricing-card .price { font-size: 2rem; font-weight: 800; margin-bottom: 4px; }
+        .pricing-card .price span { font-size: 0.9rem; font-weight: 400; color: var(--text-muted); }
+        .pricing-card .feature-list { list-style: none; margin: 20px 0; text-align: left; }
+        .pricing-card .feature-list li {
+            padding: 6px 0; font-size: 0.85rem; color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .pricing-card .feature-list li:last-child { border-bottom: none; }
+        .pricing-card .feature-list li::before { content: ''; margin-right: 8px; color: var(--green); }
+
+        /* CTA */
+        .cta {
+            padding: 80px 0; text-align: center;
+            background: radial-gradient(ellipse at center, rgba(59,130,246,0.08), transparent 60%);
+        }
+        .cta h2 { font-size: 2.25rem; margin-bottom: 16px; }
+        .cta p { color: var(--text-muted); margin-bottom: 32px; max-width: 500px; margin-left: auto; margin-right: auto; }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border); padding: 40px 0;
+            text-align: center; color: var(--text-muted); font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.25rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .features-grid { grid-template-columns: 1fr; }
+            .use-cases-grid { grid-template-columns: 1fr; }
+            .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+            .code-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="logo">Cancel<span>Kit</span></a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#endpoints">Endpoints</a>
+                <a href="#pricing">Pricing</a>
+                <a href="/docs">API Docs</a>
+                <a href="#cta" class="btn btn-primary">Get API Key</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <div class="badge">Subscription Intelligence API</div>
+            <h1>Plaid for <span class="highlight">Subscriptions</span></h1>
+            <p>One API call returns everything about a subscription: cancel, pause, downgrade, refund paths, billing intelligence, support contacts, and churn signals.</p>
+            <div class="hero-buttons">
+                <a href="/docs" class="btn btn-primary">Explore API Docs</a>
+                <a href="#endpoints" class="btn btn-outline">View Endpoints</a>
+            </div>
+            <div class="stats-grid">
+                <div class="stat"><div class="number">40+</div><div class="label">Services</div></div>
+                <div class="stat"><div class="number">6</div><div class="label">Path Types</div></div>
+                <div class="stat"><div class="number">95%</div><div class="label">Accuracy</div></div>
+                <div class="stat"><div class="number">&lt;50ms</div><div class="label">Response</div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="code-section">
+        <div class="container">
+            <h2>Full subscription intelligence in one call</h2>
+            <p class="subtitle">GET /v1/service/{domain} returns billing, contacts, and all lifecycle paths</p>
+            <div class="code-grid">
+                <div>
+                    <div class="code-tabs">
+                        <div class="code-tab active">Request</div>
+                    </div>
+                    <div class="code-block">
+<span class="method">GET</span> /v1/service/netflix.com<br>
+<span class="key">X-API-Key</span>: ck_your_key_here<br>
+<br>
+<span class="comment"># Or query specific path types:</span><br>
+<span class="method">GET</span> /v1/service/netflix.com/path?type=<span class="string">pause</span><br>
+<span class="method">GET</span> /v1/billing/netflix.com<br>
+<span class="method">GET</span> /v1/contact/netflix.com<br>
+<span class="method">GET</span> /v1/signals/netflix.com
+                    </div>
+                </div>
+                <div>
+                    <div class="code-tabs">
+                        <div class="code-tab active">Response</div>
+                    </div>
+                    <div class="code-block">
+{<br>
+&nbsp;&nbsp;<span class="key">"domain"</span>: <span class="string">"netflix.com"</span>,<br>
+&nbsp;&nbsp;<span class="key">"service_name"</span>: <span class="string">"Netflix"</span>,<br>
+&nbsp;&nbsp;<span class="key">"billing"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"billing_model"</span>: <span class="string">"auto_renew"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"refund_policy"</span>: { <span class="key">"window_days"</span>: <span class="number">0</span> }<br>
+&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;<span class="key">"lifecycle_paths"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"cancel"</span>: [{ <span class="key">"method"</span>: <span class="string">"web"</span>, ... }],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"pause"</span>: [{ <span class="key">"method"</span>: <span class="string">"web"</span>, ... }],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"downgrade"</span>: [{ ... }]<br>
+&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;<span class="key">"contacts"</span>: [{ <span class="key">"channel"</span>: <span class="string">"chat"</span>, ... }],<br>
+&nbsp;&nbsp;<span class="key">"complexity_score"</span>: <span class="number">4</span><br>
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="container">
+            <h2>Subscription intelligence, not just cancellation</h2>
+            <p class="subtitle">One integration powers every subscription lifecycle feature your app needs</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon icon-blue">&#9889;</div>
+                    <h3>Full Lifecycle Paths</h3>
+                    <p>Cancel, pause, downgrade, refund, and account delete. Structured step-by-step instructions with selectors and confidence scores.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon icon-green">&#128176;</div>
+                    <h3>Billing Intelligence</h3>
+                    <p>Billing model, trial policies, refund windows, and auto-renewal detection. Know what your users are paying and when.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon icon-orange">&#128222;</div>
+                    <h3>Support Contacts</h3>
+                    <p>Phone numbers, chat URLs, email addresses, business hours, and expected hold times for every service.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon icon-purple">&#128200;</div>
+                    <h3>Churn Signals</h3>
+                    <p>Retention offer intelligence, churn difficulty scoring, and recommended actions. Know what to expect before you cancel.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon icon-blue">&#9878;</div>
+                    <h3>Legal &amp; Compliance</h3>
+                    <p>State-specific auto-renewal law flags, ETF disclosures, and FTC ROSCA compliance indicators per service.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon icon-green">&#128273;</div>
+                    <h3>API-Key Auth + Rate Limits</h3>
+                    <p>Free tier with 100 calls/day. Tiered pricing with usage tracking, and OpenAPI/Swagger docs at /docs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="endpoints" id="endpoints">
+        <div class="container">
+            <h2>API Surface</h2>
+            <p class="subtitle">Clean REST endpoints for every subscription intelligence use case</p>
+            <div class="endpoint-list">
+                <div class="endpoint-row">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path">/v1/service/{domain}</span>
+                    <span class="endpoint-desc">Full intelligence: billing + contacts + all paths</span>
+                </div>
+                <div class="endpoint-row">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path">/v1/service/{domain}/path?type=</span>
+                    <span class="endpoint-desc">Specific lifecycle path (cancel, pause, etc.)</span>
+                </div>
+                <div class="endpoint-row">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path">/v1/billing/{domain}</span>
+                    <span class="endpoint-desc">Billing model, trial &amp; refund policy</span>
+                </div>
+                <div class="endpoint-row">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path">/v1/contact/{domain}</span>
+                    <span class="endpoint-desc">Support channels, hold times, hours</span>
+                </div>
+                <div class="endpoint-row">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path">/v1/signals/{domain}</span>
+                    <span class="endpoint-desc">Retention offers, churn risk, actions</span>
+                </div>
+                <div class="endpoint-row">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path">/v1/cancel/{domain}</span>
+                    <span class="endpoint-desc">Cancel-only paths (backwards-compatible)</span>
+                </div>
+                <div class="endpoint-row">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path">/v1/services</span>
+                    <span class="endpoint-desc">List all services (paginated, searchable)</span>
+                </div>
+                <div class="endpoint-row">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/v1/report</span>
+                    <span class="endpoint-desc">Flag broken or outdated paths</span>
+                </div>
+                <div class="endpoint-row">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/v1/keys</span>
+                    <span class="endpoint-desc">Create a free API key</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="use-cases">
+        <div class="container">
+            <h2>Built for teams with subscription users</h2>
+            <p class="subtitle">One integration, multiple teams and features</p>
+            <div class="use-cases-grid">
+                <div class="use-case-card">
+                    <h3>Fintech &amp; Banking Apps</h3>
+                    <p>Embed subscription management into banking apps. Visa, Rocket Money, and card issuers need cancel + pause + billing data to power subscription features for their cardholders.</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>Subscription Trackers</h3>
+                    <p>Turn "you spent $247/mo on subscriptions" into actionable "here's how to cancel, pause, or downgrade each one." PocketGuard, Bobby, and YNAB can finally close the loop.</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>Privacy &amp; Consumer Advocacy</h3>
+                    <p>Browsers, VPNs, and advocacy tools can surface one-click cancellation and rights information. Legal flags help users understand state-specific protections.</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>Fraud &amp; Disputes Teams</h3>
+                    <p>Billing intelligence helps dispute teams identify recurring charges, understand refund windows, and find the right support channel to resolve chargebacks faster.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <h2>Simple, usage-based pricing</h2>
+            <p class="subtitle">Start free. Scale as you grow.</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Free</h3>
+                    <div class="price">$0 <span>/mo</span></div>
+                    <ul class="feature-list">
+                        <li>100 calls/day</li>
+                        <li>3,000 calls/month</li>
+                        <li>Cancel paths only</li>
+                        <li>Community support</li>
+                    </ul>
+                    <a href="/docs" class="btn btn-outline" style="width:100%">Get Started</a>
+                </div>
+                <div class="pricing-card">
+                    <h3>Starter</h3>
+                    <div class="price">$199 <span>/mo</span></div>
+                    <ul class="feature-list">
+                        <li>10,000 calls/month</li>
+                        <li>All lifecycle paths</li>
+                        <li>Billing intelligence</li>
+                        <li>24hr path updates</li>
+                    </ul>
+                    <a href="#cta" class="btn btn-outline" style="width:100%">Contact Us</a>
+                </div>
+                <div class="pricing-card featured">
+                    <h3>Growth</h3>
+                    <div class="price">$499 <span>/mo</span></div>
+                    <ul class="feature-list">
+                        <li>100,000 calls/month</li>
+                        <li>Full lifecycle + billing</li>
+                        <li>Churn signals</li>
+                        <li>Same-day updates</li>
+                    </ul>
+                    <a href="#cta" class="btn btn-primary" style="width:100%">Contact Us</a>
+                </div>
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">Custom</div>
+                    <ul class="feature-list">
+                        <li>Unlimited calls</li>
+                        <li>Signals + bulk feeds</li>
+                        <li>White-label data feed</li>
+                        <li>Priority SLA + legal flags</li>
+                    </ul>
+                    <a href="#cta" class="btn btn-outline" style="width:100%">Talk to Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta" id="cta">
+        <div class="container">
+            <h2>Start building with subscription intelligence</h2>
+            <p>Get a free API key and make your first call in 30 seconds. Interactive docs included.</p>
+            <a href="/docs" class="btn btn-primary">Open API Docs</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>CancelKit &mdash; Subscription Intelligence API &bull; <a href="/docs" style="color:var(--accent)">API Docs</a> &bull; <a href="/redoc" style="color:var(--accent)">ReDoc</a></p>
+        </div>
+    </footer>
+</body>
+</html>

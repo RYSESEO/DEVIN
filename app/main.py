@@ -1,0 +1,72 @@
+import logging
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+
+from app.config import settings
+from app.database import Base, SessionLocal, engine
+from app.routers import cancel, reports, service
+from app.seed import seed_database
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+WEB_DIR = Path(__file__).parent.parent / "web"
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        count = seed_database(db)
+        logger.info("Database ready with %d services.", count)
+    finally:
+        db.close()
+    yield
+
+
+app = FastAPI(
+    title=settings.api_title,
+    description=settings.api_description,
+    version=settings.api_version,
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(service.router)
+app.include_router(cancel.router)
+app.include_router(reports.router)
+
+
+@app.get("/", include_in_schema=False)
+async def landing_page():
+    index_path = WEB_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path, media_type="text/html")
+    return HTMLResponse(
+        "<h1>CancelKit API</h1>"
+        "<p>Visit <a href='/docs'>/docs</a> for API docs.</p>"
+    )
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "version": settings.api_version}
+
+
+if WEB_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
