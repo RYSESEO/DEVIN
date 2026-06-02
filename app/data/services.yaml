@@ -3660,3 +3660,1609 @@ services:
           - action: click
             target: "Cancel"
             description: "Click 'Cancel' and confirm. Download files first."
+
+  # ── Sprint 2: Telecom P1 ────────────────────────────────────────────
+  - domain: cox.com
+    name: Cox Communications
+    category: telecom
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, note: "30-day money-back guarantee."}
+    refund_policy: {window_days: 30, partial_allowed: true, note: "30-day money-back for new customers."}
+    legal_flags: ["CA_ARL", "ETF_DISCLOSURE"]
+    contacts:
+      - channel: phone
+        target: "1-800-234-3993"
+        hours: "Mon-Sat 8am-8pm ET"
+        expected_hold_minutes: 25
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 900
+        difficulty: hard
+        confidence: 0.88
+        retention_offers: ["$30/mo discount for 12 months", "Free speed upgrade"]
+        legal_flags: ["ETF_DISCLOSURE"]
+        notes: "Must call to cancel. Regional cable provider. ETF applies on contracts."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-800-234-3993"
+            description: "Call Cox customer service."
+          - action: speak
+            target: "Cancel service"
+            description: "Request cancellation."
+          - action: speak
+            target: "decline_retention"
+            description: "Decline retention offers."
+          - action: action
+            target: "return_equipment"
+            description: "Return equipment to Cox store within 10 days."
+
+  - domain: centurylink.com
+    name: CenturyLink/Lumen
+    category: telecom
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 30, partial_allowed: true, note: "30-day refund for new subscribers."}
+    legal_flags: ["CA_ARL", "ETF_DISCLOSURE"]
+    contacts:
+      - channel: phone
+        target: "1-800-244-1111"
+        hours: "Mon-Fri 8am-6pm CT"
+        expected_hold_minutes: 20
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.87
+        retention_offers: ["Price lock for 12 months", "Free month credit"]
+        legal_flags: ["ETF_DISCLOSURE"]
+        notes: "Phone-only cancellation. ETF up to $200 on contract plans."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-800-244-1111"
+            description: "Call CenturyLink."
+          - action: speak
+            target: "Cancel internet service"
+            description: "Request cancellation."
+          - action: speak
+            target: "decline_offers"
+            description: "Decline retention offers. Get confirmation number."
+
+  - domain: frontier.com
+    name: Frontier Communications
+    category: telecom
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 30, partial_allowed: true}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: phone
+        target: "1-800-921-8101"
+        hours: "Mon-Fri 8am-7pm ET"
+        expected_hold_minutes: 20
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.87
+        notes: "Phone-only cancellation. Return equipment within 30 days."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-800-921-8101"
+            description: "Call Frontier."
+          - action: speak
+            target: "Cancel service"
+            description: "Request cancellation."
+          - action: action
+            target: "return_equipment"
+            description: "Return equipment via prepaid shipping label."
+
+  - domain: optimum.com
+    name: Optimum (Altice)
+    category: telecom
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true}
+    refund_policy: {window_days: 30, partial_allowed: true}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: phone
+        target: "1-866-200-7273"
+        hours: "Mon-Sat 8am-8pm ET"
+        expected_hold_minutes: 25
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.87
+        retention_offers: ["$20/mo discount", "Free premium channels"]
+        notes: "Phone or in-store cancellation. Return all equipment."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-866-200-7273"
+            description: "Call Optimum."
+          - action: speak
+            target: "Cancel service"
+            description: "Request service cancellation."
+          - action: action
+            target: "return_equipment"
+            description: "Return equipment to Optimum store."
+
+  - domain: mintmobile.com
+    name: Mint Mobile
+    category: telecom
+    billing_model: prepaid
+    trial_policy: {duration_days: 7, auto_converts: false, note: "7-day free trial with eSIM."}
+    refund_policy: {window_days: 7, partial_allowed: false, note: "7-day refund on first plan if unused."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://www.mintmobile.com/help/"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Prepaid — simply don't renew. No ETF, no contracts."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://my.mintmobile.com/account"
+            description: "Log in to Mint Mobile account."
+          - action: click
+            target: "Turn off auto-renew"
+            description: "Turn off auto-renewal. Service ends when plan expires."
+
+  # ── Sprint 2: Music P1 ──────────────────────────────────────────────
+  - domain: tidal.com
+    name: Tidal
+    category: music
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://support.tidal.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Cancel from account settings or app store subscription management."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://account.tidal.com/subscription"
+            description: "Go to Tidal Account > Subscription."
+          - action: click
+            target: "Cancel subscription"
+            description: "Click 'Cancel subscription' and confirm."
+
+  - domain: deezer.com
+    name: Deezer
+    category: music
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 14, partial_allowed: false, note: "14-day cooling-off period in EU."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://support.deezer.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.94
+        notes: "Cancel from Deezer account or app store."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.deezer.com/account/subscription"
+            description: "Go to Deezer > Account > Manage Subscription."
+          - action: click
+            target: "Cancel"
+            description: "Click 'Cancel my subscription' and confirm."
+
+  - domain: pandora.com
+    name: Pandora Premium
+    category: music
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://help.pandora.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.93
+        notes: "Cancel from Pandora settings. SiriusXM-owned."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.pandora.com/account/settings"
+            description: "Go to Pandora Settings."
+          - action: click
+            target: "Manage Subscription"
+            description: "Click 'Manage Subscription'."
+          - action: click
+            target: "Cancel"
+            description: "Cancel and confirm."
+
+  # ── Sprint 2: Software P1 ───────────────────────────────────────────
+  - domain: lastpass.com
+    name: LastPass
+    category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 30, partial_allowed: false, note: "30-day money-back guarantee."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://support.lastpass.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.92
+        notes: "Export passwords before canceling. Many users wanting to leave post-2022 breach."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://lastpass.com/account.php"
+            description: "Go to LastPass > Account Settings."
+          - action: click
+            target: "Subscription"
+            description: "Click on Subscription."
+          - action: click
+            target: "Cancel subscription"
+            description: "Click 'Cancel' and export vault first."
+
+  - domain: dashlane.com
+    name: Dashlane
+    category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 30, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://support.dashlane.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Cancel from Dashlane web app subscription settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://app.dashlane.com/#/settings/subscription"
+            description: "Go to Dashlane > Settings > Subscription."
+          - action: click
+            target: "Cancel plan"
+            description: "Click 'Cancel plan' and confirm."
+
+  - domain: todoist.com
+    name: Todoist Pro
+    category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Free tier available."}
+    refund_policy: {window_days: 30, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "support@todoist.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.96
+        notes: "Easy self-serve cancellation."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://todoist.com/app/settings/subscription"
+            description: "Go to Settings > Subscription."
+          - action: click
+            target: "Manage subscription"
+            description: "Click 'Manage subscription'."
+          - action: click
+            target: "Cancel"
+            description: "Cancel plan."
+
+  # ── Sprint 2: AI P1 ─────────────────────────────────────────────────
+  - domain: perplexity.ai
+    name: Perplexity Pro
+    category: ai
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "support@perplexity.ai"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 60
+        difficulty: easy
+        confidence: 0.96
+        notes: "Cancel from account settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.perplexity.ai/settings/subscription"
+            description: "Go to Perplexity Settings > Subscription."
+          - action: click
+            target: "Cancel plan"
+            description: "Click 'Cancel plan' and confirm."
+
+  - domain: jasper.ai
+    name: Jasper AI
+    category: ai
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 5, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://www.jasper.ai/contact"
+        hours: "Mon-Fri 9am-5pm CT"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: medium
+        confidence: 0.93
+        retention_offers: ["20% off next 3 months"]
+        notes: "Cancel from account settings. Retention offer may appear."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://app.jasper.ai/settings/billing"
+            description: "Go to Jasper > Settings > Billing."
+          - action: click
+            target: "Cancel plan"
+            description: "Click 'Cancel plan'."
+          - action: click
+            target: "Confirm"
+            description: "Decline offer and confirm cancellation."
+
+  # ── Sprint 2: Health & Fitness P1 ────────────────────────────────────
+  - domain: anytimefitness.com
+    name: Anytime Fitness
+    category: fitness
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: false, note: "Free 7-day pass at some locations."}
+    refund_policy: {window_days: 3, partial_allowed: false, note: "3-day right to cancel per FTC cooling-off rule."}
+    legal_flags: ["CA_ARL", "IN_PERSON_REQUIRED"]
+    contacts:
+      - channel: phone
+        target: "club_specific"
+        hours: "Varies by location"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: in_person
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.87
+        legal_flags: ["IN_PERSON_REQUIRED"]
+        notes: "Franchise — cancellation process varies by location. Generally requires in-person visit or certified mail. 30-day notice typical."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: action
+            target: "Visit home club"
+            description: "Visit your home Anytime Fitness location."
+          - action: action
+            target: "Request cancellation form"
+            description: "Request and fill out cancellation form."
+          - action: action
+            target: "30-day notice"
+            description: "30-day notice period. Expect one final billing."
+
+  - domain: goldsgym.com
+    name: "Gold's Gym"
+    category: fitness
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 5, partial_allowed: false}
+    legal_flags: ["CA_ARL", "IN_PERSON_REQUIRED"]
+    contacts:
+      - channel: phone
+        target: "club_specific"
+        hours: "Varies by location"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: in_person
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.86
+        legal_flags: ["IN_PERSON_REQUIRED"]
+        notes: "Franchise — varies by location. Most require in-person or certified mail."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: action
+            target: "Visit location or send certified mail"
+            description: "Visit your home gym or send certified letter."
+          - action: action
+            target: "Submit cancellation"
+            description: "Submit written cancellation request."
+
+  - domain: noom.com
+    name: Noom
+    category: fitness
+    billing_model: auto_renew
+    trial_policy: {duration_days: 14, auto_converts: true, cancel_during_trial: true, note: "14-day trial requires payment info upfront."}
+    refund_policy: {window_days: 14, partial_allowed: false, note: "Refund within 14-day trial. After that, no refunds."}
+    legal_flags: ["CA_ARL", "FTC_ROSCA"]
+    contacts:
+      - channel: chat
+        target: "https://web.noom.com/support/"
+        hours: "24/7"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 300
+        difficulty: hard
+        confidence: 0.86
+        retention_offers: ["50% off for 4 months", "Free month", "Coach reassignment"]
+        legal_flags: ["FTC_ROSCA"]
+        notes: "FTC complaint target for dark patterns. Multi-step cancellation with aggressive retention. Known for making cancel button hard to find."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://web.noom.com/settings"
+            description: "Log in and go to Settings."
+          - action: click
+            target: "Manage subscription"
+            description: "Click 'Manage subscription'."
+          - action: click
+            target: "Cancel subscription"
+            description: "Click 'Cancel subscription'."
+          - action: click
+            target: "Decline offers"
+            description: "Decline 2-3 retention offers."
+          - action: click
+            target: "Confirm"
+            description: "Confirm cancellation."
+
+  - domain: betterhelp.com
+    name: BetterHelp
+    category: fitness
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "No free trial. Financial aid available."}
+    refund_policy: {window_days: 0, partial_allowed: false, note: "No refunds for unused time."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "contact@betterhelp.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.92
+        notes: "Cancel from account settings. Therapist relationship ends immediately."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.betterhelp.com/account/settings"
+            description: "Go to BetterHelp Account Settings."
+          - action: click
+            target: "Subscription"
+            description: "Click on Subscription."
+          - action: click
+            target: "Cancel membership"
+            description: "Click 'Cancel membership' and confirm."
+
+  # ── Sprint 2: News P1 ───────────────────────────────────────────────
+  - domain: economist.com
+    name: The Economist
+    category: news
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Introductory pricing often available."}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: phone
+        target: "1-800-456-6086"
+        hours: "Mon-Fri 9am-5pm ET"
+        expected_hold_minutes: 15
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.87
+        retention_offers: ["Reduced rate for 6 months", "Digital-only downgrade"]
+        notes: "Phone cancellation often required. Retention team will make multiple offers."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-800-456-6086"
+            description: "Call The Economist subscriber services."
+          - action: speak
+            target: "Cancel subscription"
+            description: "Request cancellation."
+          - action: speak
+            target: "Decline offers"
+            description: "Decline retention offers firmly."
+
+  - domain: bloomberg.com
+    name: Bloomberg
+    category: news
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true, note: "$1.99/mo intro offer common."}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: phone
+        target: "1-800-955-4003"
+        hours: "Mon-Fri 8am-6pm ET"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.86
+        retention_offers: ["Reduced rate", "Digital access only"]
+        notes: "Must call for most plans. Bloomberg Terminal cancellation requires separate process."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-800-955-4003"
+            description: "Call Bloomberg subscriber services."
+          - action: speak
+            target: "Cancel subscription"
+            description: "Request cancellation."
+
+  - domain: ft.com
+    name: Financial Times
+    category: news
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 14, partial_allowed: false, note: "14-day cooling-off (UK/EU)."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: phone
+        target: "1-800-628-8088"
+        hours: "Mon-Fri 8am-6pm ET"
+        expected_hold_minutes: 10
+        auth_required: true
+      - channel: email
+        target: "help@ft.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 480
+        difficulty: hard
+        confidence: 0.87
+        retention_offers: ["50% off annual rate", "Downgrade to digital standard"]
+        notes: "Phone cancellation typically required for most subscription types."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-800-628-8088"
+            description: "Call FT customer service."
+          - action: speak
+            target: "Cancel"
+            description: "Request subscription cancellation."
+
+  - domain: substack.com
+    name: Substack
+    category: news
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: []
+    contacts:
+      - channel: email
+        target: "support@substack.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 60
+        difficulty: easy
+        confidence: 0.97
+        notes: "Each publication is a separate subscription. Cancel individually."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://substack.com/account/subscriptions"
+            description: "Go to Substack Account > Subscriptions."
+          - action: click
+            target: "Manage"
+            description: "Click 'Manage' next to each paid subscription."
+          - action: click
+            target: "Cancel"
+            description: "Click 'Cancel' and confirm."
+
+  - domain: medium.com
+    name: Medium
+    category: news
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://help.medium.com/"
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.96
+        notes: "Straightforward cancellation from settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://medium.com/me/settings/membership"
+            description: "Go to Medium > Settings > Membership."
+          - action: click
+            target: "Cancel membership"
+            description: "Click 'Cancel membership' and confirm."
+
+  # ── Sprint 2: Dating P1 ─────────────────────────────────────────────
+  - domain: eharmony.com
+    name: eHarmony
+    category: dating
+    billing_model: auto_renew
+    trial_policy: {duration_days: 3, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 3, partial_allowed: false, note: "3-day cancellation right."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: phone
+        target: "1-855-290-5028"
+        hours: "Mon-Fri 8am-5pm PT"
+        expected_hold_minutes: 15
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.85
+        retention_offers: ["3 months free", "50% off renewal"]
+        notes: "Notoriously difficult to cancel. Phone preferred over web. Multi-month contracts auto-renew."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-855-290-5028"
+            description: "Call eHarmony customer service."
+          - action: speak
+            target: "Cancel subscription"
+            description: "Request cancellation."
+          - action: speak
+            target: "Decline offers"
+            description: "Firmly decline retention offers."
+
+  - domain: okcupid.com
+    name: OkCupid Premium
+    category: dating
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://help.okcupid.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: medium
+        confidence: 0.93
+        notes: "Cancel through app store if purchased via mobile. Otherwise via web settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.okcupid.com/settings"
+            description: "Go to OkCupid Settings."
+          - action: click
+            target: "Subscription"
+            description: "Click on Subscription."
+          - action: click
+            target: "Cancel"
+            description: "Cancel subscription."
+
+  # ── Sprint 2: Education P1 ──────────────────────────────────────────
+  - domain: brilliant.org
+    name: Brilliant
+    category: education
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "support@brilliant.org"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.96
+        notes: "Easy self-serve cancellation."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://brilliant.org/account/"
+            description: "Go to Brilliant Account page."
+          - action: click
+            target: "Manage subscription"
+            description: "Click 'Manage subscription'."
+          - action: click
+            target: "Cancel"
+            description: "Cancel and confirm."
+
+  - domain: udemy.com
+    name: Udemy Personal Plan
+    category: education
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 30, partial_allowed: false, note: "30-day refund on individual courses."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://support.udemy.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.95
+        notes: "Cancel subscription from account settings. Individual course purchases are separate."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.udemy.com/user/edit-account/"
+            description: "Go to Udemy Account > Subscriptions."
+          - action: click
+            target: "Cancel subscription"
+            description: "Click 'Cancel subscription' and confirm."
+
+  # ── Sprint 2: Food Delivery P1 ──────────────────────────────────────
+  - domain: grubhub.com
+    name: Grubhub+
+    category: food_delivery
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://www.grubhub.com/help/contact-us"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.94
+        notes: "Cancel from Grubhub account settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.grubhub.com/account/membership"
+            description: "Go to Grubhub Account > Membership."
+          - action: click
+            target: "Cancel membership"
+            description: "Click 'Cancel membership' and confirm."
+
+  # ── Sprint 2: Shopping P1 ───────────────────────────────────────────
+  - domain: target.com
+    name: Target Circle 360
+    category: shopping
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: phone
+        target: "1-800-440-0680"
+        hours: "24/7"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.94
+        notes: "Cancel from Target account membership page."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.target.com/account/membership"
+            description: "Go to Target.com > Account > Membership."
+          - action: click
+            target: "Cancel membership"
+            description: "Click 'Cancel membership' and confirm."
+
+  - domain: chewy.com
+    name: Chewy Autoship
+    category: shopping
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 365, partial_allowed: true, note: "Generous return policy on most items."}
+    legal_flags: []
+    contacts:
+      - channel: phone
+        target: "1-800-672-4399"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+      - channel: chat
+        target: "https://www.chewy.com/app/content/contact"
+        hours: "24/7"
+        expected_hold_minutes: 3
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.96
+        notes: "Cancel individual autoship items or all autoship from account."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.chewy.com/app/account/autoship"
+            description: "Go to Chewy Account > Autoship."
+          - action: click
+            target: "Cancel Autoship"
+            description: "Click 'Cancel Autoship' for each item or cancel all."
+
+  # ── Sprint 2: VPN & Security P1 ─────────────────────────────────────
+  - domain: privateinternetaccess.com
+    name: Private Internet Access
+    category: vpn
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true, note: "7-day trial on mobile."}
+    refund_policy: {window_days: 30, partial_allowed: false, note: "30-day money-back guarantee."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://www.privateinternetaccess.com/helpdesk/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Turn off auto-renewal from account dashboard."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.privateinternetaccess.com/account"
+            description: "Go to PIA Account."
+          - action: click
+            target: "Cancel auto-renewal"
+            description: "Turn off auto-renewal."
+
+  - domain: bitdefender.com
+    name: Bitdefender
+    category: vpn
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: false, cancel_during_trial: true}
+    refund_policy: {window_days: 30, partial_allowed: false, note: "30-day money-back guarantee."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://www.bitdefender.com/consumer/support/"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.92
+        retention_offers: ["30% off renewal"]
+        notes: "Turn off auto-renewal from Bitdefender Central."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://central.bitdefender.com/"
+            description: "Go to Bitdefender Central."
+          - action: click
+            target: "My Subscriptions"
+            description: "Click 'My Subscriptions'."
+          - action: click
+            target: "Turn off auto-renewal"
+            description: "Turn off auto-renewal."
+
+  # ── Sprint 2: Finance P1 ────────────────────────────────────────────
+  - domain: lifelock.com
+    name: LifeLock (Norton)
+    category: finance
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 60, partial_allowed: true, note: "60-day refund on annual subscriptions."}
+    legal_flags: ["CA_ARL", "FTC_ROSCA"]
+    contacts:
+      - channel: phone
+        target: "1-800-543-3562"
+        hours: "Mon-Fri 6am-10pm PT"
+        expected_hold_minutes: 15
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.86
+        retention_offers: ["50% off for 12 months", "Free month", "Downgrade to basic"]
+        legal_flags: ["FTC_ROSCA"]
+        notes: "Norton-owned. Aggressive retention. Auto-renews at significantly higher price."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-800-543-3562"
+            description: "Call LifeLock."
+          - action: speak
+            target: "Cancel membership"
+            description: "Request cancellation."
+          - action: speak
+            target: "Decline offers"
+            description: "Decline retention offers firmly."
+
+  - domain: robinhood.com
+    name: Robinhood Gold
+    category: finance
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://robinhood.com/contact"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Cancel from app or web account settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://robinhood.com/account/settings"
+            description: "Go to Robinhood Settings."
+          - action: click
+            target: "Robinhood Gold"
+            description: "Click on Robinhood Gold."
+          - action: click
+            target: "Cancel Gold"
+            description: "Click 'Cancel Gold' and confirm."
+
+  # ── Sprint 2: Home P1 ───────────────────────────────────────────────
+  - domain: simplisafe.com
+    name: SimpliSafe
+    category: home
+    billing_model: auto_renew
+    trial_policy: {duration_days: 60, auto_converts: false, note: "60-day money-back guarantee on hardware."}
+    refund_policy: {window_days: 60, partial_allowed: true}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: phone
+        target: "1-888-957-4675"
+        hours: "24/7"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: phone
+        estimated_time_seconds: 300
+        difficulty: medium
+        confidence: 0.92
+        notes: "Call to cancel monitoring plan. Equipment still works for local alarms without plan."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: call
+            target: "1-888-957-4675"
+            description: "Call SimpliSafe."
+          - action: speak
+            target: "Cancel monitoring plan"
+            description: "Request plan cancellation."
+
+  - domain: store.google.com
+    name: Nest Aware
+    category: home
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://support.google.com/googlenest/gethelp"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Cancel through Google Home app or Google Store."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://store.google.com/account"
+            description: "Go to Google Store Account > Subscriptions."
+          - action: click
+            target: "Cancel Nest Aware"
+            description: "Click 'Cancel' next to Nest Aware."
+
+  # ── Sprint 2: Meal Kits P1 ──────────────────────────────────────────
+  - domain: homechef.com
+    name: Home Chef
+    category: meal_kit
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Discount on first order."}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "info@homechef.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.92
+        retention_offers: ["50% off next box"]
+        notes: "Must skip weeks before cancel option appears. Kroger-owned."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.homechef.com/account/settings"
+            description: "Go to Home Chef Account Settings."
+          - action: click
+            target: "Deactivate account"
+            description: "Scroll to bottom, click 'Deactivate account'."
+          - action: click
+            target: "Confirm"
+            description: "Decline offer and confirm."
+
+  - domain: dinnerly.com
+    name: Dinnerly
+    category: meal_kit
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "hello@dinnerly.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.91
+        notes: "Budget meal kit. Similar process to Marley Spoon (same parent company)."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://my.dinnerly.com/account"
+            description: "Go to Dinnerly Account."
+          - action: click
+            target: "Deactivate"
+            description: "Click 'Deactivate subscription'."
+          - action: click
+            target: "Confirm"
+            description: "Confirm deactivation."
+
+  - domain: everyplate.com
+    name: EveryPlate
+    category: meal_kit
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Heavy first-box discount."}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://www.everyplate.com/contact"
+        hours: "Mon-Fri 9am-9pm ET"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 240
+        difficulty: medium
+        confidence: 0.90
+        retention_offers: ["60% off next 2 boxes"]
+        notes: "HelloFresh budget brand. Similar multi-step cancel process."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.everyplate.com/my-account/plan-settings"
+            description: "Go to EveryPlate Account > Plan Settings."
+          - action: click
+            target: "Cancel plan"
+            description: "Click 'Cancel plan'."
+          - action: click
+            target: "Decline offers"
+            description: "Decline retention offers."
+          - action: click
+            target: "Confirm"
+            description: "Confirm cancellation."
+
+  - domain: greenchef.com
+    name: Green Chef
+    category: meal_kit
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://www.greenchef.com/contact"
+        hours: "Mon-Fri 9am-9pm ET"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 240
+        difficulty: medium
+        confidence: 0.90
+        retention_offers: ["50% off next box"]
+        notes: "HelloFresh organic brand. Same cancellation flow."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.greenchef.com/my-account/plan-settings"
+            description: "Go to Account > Plan Settings."
+          - action: click
+            target: "Cancel plan"
+            description: "Click 'Cancel plan'."
+          - action: click
+            target: "Confirm"
+            description: "Decline offers and confirm."
+
+  # ── Sprint 2: Lifestyle P1 ──────────────────────────────────────────
+  - domain: birchbox.com
+    name: Birchbox
+    category: lifestyle
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "support@birchbox.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.91
+        notes: "Cancel from account settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.birchbox.com/account/subscriptions"
+            description: "Go to Birchbox Account > Subscriptions."
+          - action: click
+            target: "Cancel"
+            description: "Click 'Cancel subscription'."
+          - action: click
+            target: "Confirm"
+            description: "Confirm cancellation."
+
+  - domain: fabfitfun.com
+    name: FabFitFun
+    category: lifestyle
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Seasonal subscription."}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "editorial@fabfitfun.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.91
+        retention_offers: ["$10 off next box", "Free add-on item"]
+        notes: "Cancel before billing window (several weeks before box ships)."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://fabfitfun.com/account/subscriptions"
+            description: "Go to FabFitFun Account > Subscriptions."
+          - action: click
+            target: "Cancel subscription"
+            description: "Click 'Cancel subscription'."
+          - action: click
+            target: "Confirm"
+            description: "Decline offer and confirm."
+
+  - domain: ipsy.com
+    name: Ipsy Glam Bag
+    category: lifestyle
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: email
+        target: "help@ipsy.com"
+        expected_hold_minutes: 0
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.91
+        notes: "Cancel before the 1st of the month to avoid next month's charge."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.ipsy.com/account/membership"
+            description: "Go to Ipsy Account > Membership."
+          - action: click
+            target: "Cancel membership"
+            description: "Click 'Cancel membership'."
+          - action: click
+            target: "Confirm"
+            description: "Confirm cancellation."
+
+  - domain: stitchfix.com
+    name: Stitch Fix
+    category: lifestyle
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "No subscription required. Per-fix styling fee."}
+    refund_policy: {window_days: 30, partial_allowed: true, note: "Return unwanted items within 30 days."}
+    legal_flags: []
+    contacts:
+      - channel: web
+        target: "https://support.stitchfix.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.94
+        notes: "No ongoing subscription to cancel — just stop scheduling fixes. Account can be deactivated."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.stitchfix.com/account/settings"
+            description: "Go to Stitch Fix Account Settings."
+          - action: click
+            target: "Cancel automatic fixes"
+            description: "Turn off automatic fixes."
+
+  # ── Sprint 2: Professional P1 ───────────────────────────────────────
+  - domain: hubspot.com
+    name: HubSpot
+    category: professional
+    billing_model: auto_renew
+    trial_policy: {duration_days: 14, auto_converts: false, note: "14-day free trial. No auto-convert."}
+    refund_policy: {window_days: 0, partial_allowed: false, note: "Annual contracts non-refundable."}
+    legal_flags: ["ETF_DISCLOSURE"]
+    contacts:
+      - channel: phone
+        target: "1-888-482-7768"
+        hours: "Mon-Fri 7am-8pm ET"
+        expected_hold_minutes: 10
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 300
+        difficulty: medium
+        confidence: 0.91
+        notes: "Cancel from account settings. Annual contracts require notice before renewal date."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://app.hubspot.com/account-and-billing"
+            description: "Go to HubSpot Account & Billing."
+          - action: click
+            target: "Cancel subscription"
+            description: "Click 'Cancel subscription'."
+          - action: click
+            target: "Confirm"
+            description: "Follow prompts and confirm."
+
+  - domain: mailchimp.com
+    name: Mailchimp
+    category: professional
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false, note: "No refunds for partial months."}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://mailchimp.com/contact/"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.93
+        notes: "Account must have no pending campaigns. Export contacts before canceling."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://admin.mailchimp.com/account/"
+            description: "Go to Mailchimp Account."
+          - action: click
+            target: "Pause or delete account"
+            description: "Click 'Pause or delete account'."
+          - action: click
+            target: "Delete account"
+            description: "Click 'Delete' or 'Downgrade to free'."
+      - path_type: downgrade
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.94
+        notes: "Downgrade to free plan. Keeps data but limits features."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://admin.mailchimp.com/account/"
+            description: "Go to Account."
+          - action: click
+            target: "Downgrade to Free"
+            description: "Select 'Downgrade to Free' plan."
+
+  # ── Sprint 2: Entertainment P1 ──────────────────────────────────────
+  - domain: twitch.tv
+    name: Twitch
+    category: entertainment
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: []
+    contacts:
+      - channel: web
+        target: "https://help.twitch.tv/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.96
+        notes: "Cancel individual channel subscriptions. Turbo subscription cancelled separately."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.twitch.tv/subscriptions"
+            description: "Go to Twitch > Subscriptions."
+          - action: click
+            target: "Don't Renew"
+            description: "Click 'Don't Renew' for each subscription."
+
+  - domain: patreon.com
+    name: Patreon
+    category: entertainment
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false, note: "Refund policies vary by creator."}
+    legal_flags: []
+    contacts:
+      - channel: web
+        target: "https://support.patreon.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.96
+        notes: "Cancel individual creator memberships from membership settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.patreon.com/settings/memberships"
+            description: "Go to Patreon > Settings > Memberships."
+          - action: click
+            target: "Edit"
+            description: "Click 'Edit' on the membership."
+          - action: click
+            target: "Cancel membership"
+            description: "Cancel and confirm."
+
+  # ── Sprint 2: Streaming P1 ──────────────────────────────────────────
+  - domain: fubo.tv
+    name: Fubo
+    category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://support.fubo.tv/"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.94
+        notes: "Cancel from account settings. Live sports streaming."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.fubo.tv/account"
+            description: "Go to Fubo Account."
+          - action: click
+            target: "Cancel subscription"
+            description: "Click 'Cancel subscription' and confirm."
+
+  - domain: britbox.com
+    name: BritBox
+    category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://help.britbox.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.94
+        notes: "Cancel from account settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.britbox.com/account"
+            description: "Go to BritBox Account."
+          - action: click
+            target: "Cancel"
+            description: "Click 'Cancel subscription' and confirm."
+
+  - domain: sling.com
+    name: Sling TV
+    category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 3, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://help.sling.com/"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Dish Network-owned. Cancel from account settings."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.sling.com/account"
+            description: "Go to Sling Account."
+          - action: click
+            target: "Cancel subscription"
+            description: "Click 'Cancel subscription' and confirm."
+
+  # ── Sprint 2: Cloud Storage P1 ──────────────────────────────────────
+  - domain: box.com
+    name: Box
+    category: cloud
+    billing_model: auto_renew
+    trial_policy: {duration_days: 14, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: web
+        target: "https://support.box.com/"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Cancel from account settings. Download data before canceling."
+        last_verified_at: "2026-05-20T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://app.box.com/account"
+            description: "Go to Box Account."
+          - action: click
+            target: "Cancel plan"
+            description: "Click 'Cancel plan'."
+          - action: click
+            target: "Confirm"
+            description: "Confirm cancellation."
