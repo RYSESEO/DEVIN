@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.routers import cancel, reports
+from app.routers import cancel, reports, service
 from app.seed import seed_database
 
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(service.router)
 app.include_router(cancel.router)
 app.include_router(reports.router)
 
@@ -57,7 +58,8 @@ async def landing_page():
     if index_path.exists():
         return FileResponse(index_path, media_type="text/html")
     return HTMLResponse(
-        "<h1>CancelKit API</h1><p>Visit <a href='/docs'>/docs</a> for API docs.</p>"
+        "<h1>CancelKit API</h1>"
+        "<p>Visit <a href='/docs'>/docs</a> for API docs.</p>"
     )
 
 

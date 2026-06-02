@@ -1,6 +1,15 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import relationship
 
@@ -19,28 +28,56 @@ class Service(Base):
     name = Column(String, nullable=False)
     category = Column(String, nullable=False, index=True)
     logo_url = Column(String, nullable=True)
+    billing_model = Column(String, nullable=True)
+    trial_policy = Column(JSON, nullable=True)
+    refund_policy = Column(JSON, nullable=True)
+    legal_flags = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
-    paths = relationship("CancellationPath", back_populates="service", cascade="all, delete-orphan")
+    paths = relationship(
+        "LifecyclePath", back_populates="service", cascade="all, delete-orphan"
+    )
+    contacts = relationship(
+        "ContactInfo", back_populates="service", cascade="all, delete-orphan"
+    )
 
 
-class CancellationPath(Base):
-    __tablename__ = "cancellation_paths"
+class LifecyclePath(Base):
+    __tablename__ = "lifecycle_paths"
 
     id = Column(Integer, primary_key=True, index=True)
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
+    path_type = Column(String, nullable=False, default="cancel", index=True)
     method = Column(String, nullable=False)
     steps = Column(JSON, nullable=False)
     estimated_time_seconds = Column(Integer, nullable=False)
     difficulty = Column(String, nullable=False)
     confidence = Column(Float, nullable=False, default=0.9)
+    complexity_score = Column(Integer, nullable=True)
+    retention_offers = Column(JSON, nullable=True)
+    legal_flags = Column(JSON, nullable=True)
     notes = Column(Text, nullable=True)
     last_verified_at = Column(DateTime, default=utcnow)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     service = relationship("Service", back_populates="paths")
+
+
+class ContactInfo(Base):
+    __tablename__ = "contact_info"
+
+    id = Column(Integer, primary_key=True, index=True)
+    service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
+    channel = Column(String, nullable=False)
+    target = Column(String, nullable=False)
+    hours = Column(String, nullable=True)
+    expected_hold_minutes = Column(Integer, nullable=True)
+    auth_required = Column(Boolean, default=False)
+    notes = Column(Text, nullable=True)
+
+    service = relationship("Service", back_populates="contacts")
 
 
 class ApiKey(Base):

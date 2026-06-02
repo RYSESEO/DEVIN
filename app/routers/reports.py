@@ -47,7 +47,7 @@ def contribute_path(
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Suggest a new cancellation path for review."""
+    """Suggest a new lifecycle path for review."""
     record_usage(db, api_key, "/v1/contribute", body.domain)
 
     report = Report(
@@ -55,7 +55,8 @@ def contribute_path(
         service_domain=body.domain,
         report_type="new_service",
         description=(
-            f"Contributed path for {body.service_name} ({body.domain}). "
+            f"Contributed {body.path_type} path for "
+            f"{body.service_name} ({body.domain}). "
             f"Method: {body.method}, Steps: {len(body.steps)}, "
             f"Difficulty: {body.difficulty}. Notes: {body.notes or 'None'}"
         ),

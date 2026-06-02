@@ -3,12 +3,27 @@ services:
   - domain: netflix.com
     name: Netflix
     category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Netflix no longer offers free trials."}
+    refund_policy: {window_days: 0, partial_allowed: false, note: "No refunds. Access continues until end of billing period."}
+    legal_flags: ["CA_ARL", "FTC_ROSCA"]
+    contacts:
+      - channel: web
+        target: "https://help.netflix.com"
+        auth_required: false
+        notes: "Help center with chat option for logged-in users."
+      - channel: chat
+        target: "https://help.netflix.com/en/contactus"
+        hours: "24/7"
+        expected_hold_minutes: 2
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.97
-        notes: "Access continues until end of billing period. No partial refunds."
+        notes: "Access continues until end of billing period."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -23,40 +38,134 @@ services:
           - action: click
             target: "Finish Cancellation"
             description: "Click 'Finish Cancellation' to confirm."
+      - path_type: pause
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.93
+        notes: "Pause for 1, 2, or 3 months. No charge during pause. Resumes automatically."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.netflix.com/account"
+            description: "Go to your Netflix Account page."
+          - action: click
+            target: "Manage Membership"
+            description: "Click 'Manage Membership'."
+          - action: click
+            target: "Pause Membership"
+            description: "Select 'Pause Membership' and choose duration."
+      - path_type: downgrade
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.95
+        notes: "Switch to a lower-priced plan. Change takes effect next billing cycle."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.netflix.com/account"
+            description: "Go to your Netflix Account page."
+          - action: click
+            target: "Change Plan"
+            description: "Click 'Change Plan'."
+          - action: click
+            target: "lower_tier"
+            description: "Select a lower-priced plan and confirm."
 
   - domain: hulu.com
     name: Hulu
     category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://help.hulu.com/contact-us"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+      - channel: phone
+        target: "1-888-631-4858"
+        hours: "24/7"
+        expected_hold_minutes: 10
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.95
-        notes: "If billed through a third party (Apple, Roku, etc.), cancel through that platform."
+        notes: "If billed through a third party (Apple, Roku), cancel through that platform."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://secure.hulu.com/account"
-            description: "Go to your Hulu Account page and sign in."
+            description: "Go to your Hulu Account page."
           - action: click
             target: "Cancel Your Subscription"
-            description: "Click 'Cancel Your Subscription' at the bottom of the page."
+            description: "Click 'Cancel Your Subscription'."
           - action: click
             target: "Continue to Cancel"
-            description: "Click 'Continue to Cancel' on the confirmation page."
+            description: "Click 'Continue to Cancel'."
           - action: click
             target: "Cancel Subscription"
             description: "Click 'Cancel Subscription' to finalize."
+      - path_type: pause
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.90
+        notes: "Pause available for up to 12 weeks."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://secure.hulu.com/account"
+            description: "Go to Hulu Account."
+          - action: click
+            target: "Pause Your Subscription"
+            description: "Select pause option and choose duration."
+      - path_type: downgrade
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.90
+        notes: "Switch between ad-supported and no-ads plans."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://secure.hulu.com/account"
+            description: "Go to Hulu Account."
+          - action: click
+            target: "Manage Plan"
+            description: "Click 'Manage Plan' and select a lower tier."
 
   - domain: disneyplus.com
     name: Disney+
     category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://help.disneyplus.com"
+        hours: "24/7"
+        expected_hold_minutes: 3
+        auth_required: true
+      - channel: phone
+        target: "1-888-905-7888"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.95
-        notes: "Disney Bundle (Disney+/Hulu/ESPN+) must be canceled as a bundle."
+        notes: "Disney Bundle must be canceled as a bundle."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -64,7 +173,7 @@ services:
             description: "Go to your Disney+ Account page."
           - action: click
             target: "Subscription"
-            description: "Click on your subscription under Subscription section."
+            description: "Click on your subscription."
           - action: click
             target: "Cancel Subscription"
             description: "Click 'Cancel Subscription'."
@@ -75,12 +184,23 @@ services:
   - domain: max.com
     name: Max
     category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://help.max.com"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Formerly HBO Max. If billed via cable provider, contact them directly."
+        notes: "Formerly HBO Max. If billed via cable provider, contact them."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -88,23 +208,33 @@ services:
             description: "Go to your Max Account page."
           - action: click
             target: "Subscription"
-            description: "Click on 'Subscription' section."
+            description: "Click on 'Subscription'."
           - action: click
             target: "Cancel Subscription"
             description: "Click 'Cancel Subscription'."
           - action: click
             target: "Cancel"
-            description: "Confirm cancellation on the retention page."
+            description: "Confirm on the retention page."
 
   - domain: peacocktv.com
     name: Peacock
     category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: chat
+        target: "https://www.peacocktv.com/help"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Peacock Free tier will remain active after cancellation."
+        notes: "Peacock Free tier remains after cancellation."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -120,12 +250,21 @@ services:
   - domain: paramountplus.com
     name: Paramount+
     category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: chat
+        target: "https://help.paramountplus.com"
+        hours: "Mon-Sun 9am-12am ET"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Access continues until end of billing period."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -136,66 +275,28 @@ services:
             description: "Click 'Cancel Subscription'."
           - action: click
             target: "Continue to Cancel"
-            description: "Confirm cancellation through the retention offers."
+            description: "Confirm through retention offers."
 
-  - domain: tv.apple.com
-    name: Apple TV+
+  - domain: youtube.com
+    name: YouTube Premium
     category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["CA_ARL"]
+    contacts:
+      - channel: chat
+        target: "https://support.google.com/youtube/gethelp"
+        hours: "24/7"
+        expected_hold_minutes: 3
+        auth_required: true
     paths:
-      - method: web
-        estimated_time_seconds: 180
-        difficulty: medium
-        confidence: 0.90
-        notes: "Managed through Apple ID subscriptions, not a standalone cancel page."
-        last_verified_at: "2026-05-01T00:00:00Z"
-        steps:
-          - action: navigate
-            target: "https://support.apple.com/en-us/118428"
-            description: "Open Apple subscription management."
-          - action: navigate
-            target: "Settings > [Your Name] > Subscriptions on iPhone/iPad, or reportaproblem.apple.com"
-            description: "Go to Settings > [Your Name] > Subscriptions on your Apple device."
-          - action: click
-            target: "Apple TV+"
-            description: "Tap on your Apple TV+ subscription."
-          - action: click
-            target: "Cancel Subscription"
-            description: "Tap 'Cancel Subscription' and confirm."
-
-  # ── Music ─────────────────────────────────────────────────────────
-  - domain: spotify.com
-    name: Spotify
-    category: music
-    paths:
-      - method: web
-        estimated_time_seconds: 90
-        difficulty: easy
-        confidence: 0.97
-        notes: "Account reverts to free tier with ads. Playlists and saved music are kept."
-        last_verified_at: "2026-05-01T00:00:00Z"
-        steps:
-          - action: navigate
-            target: "https://www.spotify.com/account/subscription/"
-            description: "Go to your Spotify Account subscription page."
-          - action: click
-            target: "Change plan"
-            description: "Click 'Change plan'."
-          - action: click
-            target: "Cancel Premium"
-            description: "Select 'Cancel Premium'."
-          - action: click
-            target: "Yes, cancel"
-            description: "Confirm cancellation."
-
-  - domain: music.youtube.com
-    name: YouTube Music Premium
-    category: music
-    paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
-        confidence: 0.95
-        notes: "Also cancels YouTube Premium if bundled."
+        confidence: 0.97
+        notes: "Loses ad-free viewing, background play, and YouTube Music Premium if bundled."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -213,74 +314,290 @@ services:
           - action: click
             target: "Yes, cancel"
             description: "Click 'Yes, cancel' to confirm."
+      - path_type: pause
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.93
+        notes: "Pause for 1-6 months."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.youtube.com/paid_memberships"
+            description: "Go to YouTube paid memberships."
+          - action: click
+            target: "Manage membership"
+            description: "Click 'Manage membership'."
+          - action: click
+            target: "Pause"
+            description: "Select 'Pause' and choose duration."
+
+  - domain: tv.apple.com
+    name: Apple TV+
+    category: streaming
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 14, partial_allowed: false, note: "Request via reportaproblem.apple.com"}
+    contacts:
+      - channel: phone
+        target: "1-800-275-2273"
+        hours: "24/7"
+        expected_hold_minutes: 10
+        auth_required: true
+      - channel: chat
+        target: "https://support.apple.com"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.90
+        notes: "Managed through Apple ID subscriptions."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "Settings > [Your Name] > Subscriptions on iPhone/iPad"
+            description: "Go to Settings > [Your Name] > Subscriptions."
+          - action: click
+            target: "Apple TV+"
+            description: "Tap on your Apple TV+ subscription."
+          - action: click
+            target: "Cancel Subscription"
+            description: "Tap 'Cancel Subscription' and confirm."
+
+  # ── Music ─────────────────────────────────────────────────────────
+  - domain: spotify.com
+    name: Spotify
+    category: music
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false, note: "No refunds. Reverts to free tier."}
+    legal_flags: ["CA_ARL", "EU_CRD"]
+    contacts:
+      - channel: web
+        target: "https://support.spotify.com"
+        auth_required: false
+      - channel: chat
+        target: "https://support.spotify.com/contact-spotify-support"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 90
+        difficulty: easy
+        confidence: 0.97
+        notes: "Reverts to free tier with ads. Playlists and saved music are kept."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.spotify.com/account/subscription/"
+            description: "Go to Spotify Account subscription page."
+          - action: click
+            target: "Change plan"
+            description: "Click 'Change plan'."
+          - action: click
+            target: "Cancel Premium"
+            description: "Select 'Cancel Premium'."
+          - action: click
+            target: "Yes, cancel"
+            description: "Confirm cancellation."
+      - path_type: downgrade
+        method: web
+        estimated_time_seconds: 60
+        difficulty: easy
+        confidence: 0.95
+        notes: "Switch from Premium Family/Duo to individual, or cancel to free."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.spotify.com/account/subscription/"
+            description: "Go to Spotify Account subscription page."
+          - action: click
+            target: "Change plan"
+            description: "Click 'Change plan' and select a lower tier."
 
   - domain: audible.com
     name: Audible
     category: music
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 365, partial_allowed: true, note: "Returns allowed within 365 days of purchase for audiobooks."}
+    contacts:
+      - channel: phone
+        target: "1-888-283-5051"
+        hours: "Mon-Sun 8am-12am ET"
+        expected_hold_minutes: 5
+        auth_required: true
+      - channel: chat
+        target: "https://www.audible.com/contact-us"
+        hours: "Mon-Sun 8am-12am ET"
+        expected_hold_minutes: 3
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.92
-        notes: "You keep any purchased audiobooks. Unused credits are lost. Audible may offer retention deals."
+        retention_offers:
+          - type: discount
+            typical_amount: "50% off for 3 months"
+            likelihood: high
+          - type: pause
+            typical_amount: "Pause for up to 3 months"
+            likelihood: high
+        notes: "You keep purchased audiobooks. Unused credits lost. Heavy retention flow."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://www.audible.com/account/overview"
-            description: "Go to your Audible Account page (desktop only)."
+            description: "Go to Audible Account page (desktop only)."
           - action: click
             target: "View membership details"
             description: "Click 'View membership details'."
           - action: click
             target: "Cancel your membership"
-            description: "Scroll down and click 'Cancel your membership'."
+            description: "Click 'Cancel your membership'."
           - action: click
             target: "Continue"
-            description: "Navigate past the retention offer pages."
+            description: "Navigate past retention offer pages."
           - action: click
             target: "Cancel membership"
             description: "Click 'Cancel membership' to finalize."
+      - path_type: pause
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.92
+        notes: "Pause for up to 3 months. No charges during pause. Credits do not accrue."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.audible.com/account/overview"
+            description: "Go to Audible Account."
+          - action: click
+            target: "View membership details"
+            description: "Click 'View membership details'."
+          - action: click
+            target: "Pause membership"
+            description: "Click 'Pause membership' and select duration."
 
   # ── Software / Productivity ──────────────────────────────────────
   - domain: adobe.com
     name: Adobe Creative Cloud
     category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 14, partial_allowed: false, note: "14-day refund for annual prepaid. Early termination fee of 50% remaining months for annual monthly."}
+    legal_flags: ["CA_ARL", "FTC_ROSCA", "ETF_DISCLOSURE"]
+    contacts:
+      - channel: chat
+        target: "https://helpx.adobe.com/contact.html"
+        hours: "Mon-Fri 5am-7pm PT"
+        expected_hold_minutes: 10
+        auth_required: true
+      - channel: phone
+        target: "1-800-833-6687"
+        hours: "Mon-Fri 5am-7pm PT"
+        expected_hold_minutes: 15
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 420
         difficulty: hard
         confidence: 0.92
-        notes: "Annual plans have an early termination fee of 50% of remaining months. Adobe often offers 2-3 months free or 40% discount to retain you. Multiple retention screens."
+        retention_offers:
+          - type: discount
+            typical_amount: "40% off for 2-3 months"
+            likelihood: high
+          - type: free_months
+            typical_amount: "2-3 months free"
+            likelihood: high
+        legal_flags: ["ETF_50_PERCENT"]
+        notes: "Annual plans have early termination fee of 50% remaining months. Multiple retention screens."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://account.adobe.com/plans"
-            description: "Go to Adobe Account Plans page and sign in."
+            description: "Go to Adobe Account Plans page."
           - action: click
             target: "Cancel plan"
             description: "Find your plan and click 'Cancel plan'."
           - action: navigate
             target: "retention_flow"
-            description: "Navigate through multiple retention offer screens. Read each carefully."
+            description: "Navigate through multiple retention offer screens."
           - action: info
             target: "early_termination_fee"
-            description: "WARNING: If on annual plan, Adobe charges 50% of remaining months as early termination fee."
+            description: "WARNING: Annual plan = 50% of remaining months as ETF."
           - action: click
             target: "Continue"
             description: "Decline retention offers and click 'Continue'."
           - action: click
             target: "Confirm cancellation"
-            description: "Click to confirm cancellation on the final screen."
+            description: "Confirm on the final screen."
+      - path_type: downgrade
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.90
+        notes: "Switch from All Apps to single-app plan. May incur ETF on annual."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://account.adobe.com/plans"
+            description: "Go to Adobe Account Plans."
+          - action: click
+            target: "Change plan"
+            description: "Click 'Change plan'."
+          - action: click
+            target: "lower_tier"
+            description: "Select a single-app plan."
+      - path_type: refund
+        method: chat
+        estimated_time_seconds: 600
+        difficulty: hard
+        confidence: 0.80
+        notes: "Refunds within 14 days of purchase. Chat support is most effective for refund requests."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://helpx.adobe.com/contact.html"
+            description: "Go to Adobe Contact page."
+          - action: click
+            target: "Chat"
+            description: "Start a chat session."
+          - action: speak
+            target: "refund_request"
+            description: "Request refund. Cite 14-day refund policy. Have order number ready."
 
   - domain: dropbox.com
     name: Dropbox
     category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 30, partial_allowed: false, note: "30-day refund for annual plans."}
+    contacts:
+      - channel: web
+        target: "https://www.dropbox.com/support"
+        auth_required: true
+      - channel: chat
+        target: "https://www.dropbox.com/support"
+        hours: "Mon-Fri 9am-5pm PT"
+        expected_hold_minutes: 10
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.93
-        notes: "Account downgrades to free 2GB plan. Files over the limit become read-only."
+        notes: "Downgrades to free 2GB plan. Files over limit become read-only."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -291,34 +608,54 @@ services:
             description: "Click 'Cancel plan' or 'Downgrade'."
           - action: navigate
             target: "retention_flow"
-            description: "Dropbox will show reasons to stay. Continue through the flow."
-          - action: click
-            target: "Continue to cancel"
-            description: "Click 'Continue to cancel'."
+            description: "Continue through retention flow."
           - action: click
             target: "Confirm"
             description: "Confirm downgrade to Basic."
+      - path_type: downgrade
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.93
+        notes: "Switch from Professional to Plus, or Plus to Basic."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.dropbox.com/account/plan"
+            description: "Go to Dropbox plan page."
+          - action: click
+            target: "Downgrade"
+            description: "Select a lower plan tier."
 
   - domain: grammarly.com
     name: Grammarly
     category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 10, partial_allowed: false}
+    contacts:
+      - channel: email
+        target: "support@grammarly.com"
+        expected_hold_minutes: 1440
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Premium features deactivate at end of billing period. Free tier still available."
+        notes: "Free tier still available."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://account.grammarly.com/subscription"
-            description: "Go to your Grammarly Subscription page."
+            description: "Go to Grammarly Subscription page."
           - action: click
             target: "Cancel Subscription"
             description: "Click 'Cancel Subscription'."
           - action: click
             target: "Continue"
-            description: "Navigate through the retention flow."
+            description: "Navigate retention flow."
           - action: click
             target: "Cancel Subscription"
             description: "Confirm cancellation."
@@ -326,12 +663,21 @@ services:
   - domain: canva.com
     name: Canva Pro
     category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: email
+        target: "support@canva.com"
+        expected_hold_minutes: 1440
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Reverts to Canva Free. Designs are kept but premium elements become watermarked."
+        notes: "Reverts to Canva Free. Premium elements become watermarked."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -339,41 +685,63 @@ services:
             description: "Go to Canva Settings > Billing and Plans."
           - action: click
             target: "Cancel subscription"
-            description: "Click 'Cancel subscription' or three-dot menu."
+            description: "Click 'Cancel subscription'."
           - action: click
             target: "Continue to cancel"
-            description: "Navigate retention flow and confirm."
+            description: "Confirm."
 
   - domain: notion.so
     name: Notion
     category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Free plan available; no trial needed."}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: email
+        target: "team@makenotion.com"
+        expected_hold_minutes: 1440
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Downgrades to free plan. Content is preserved but some features restricted."
+        notes: "Downgrades to free plan. Content preserved."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://www.notion.so/settings/billing"
-            description: "Go to Notion Settings > Billing (must be workspace owner)."
+            description: "Go to Notion Settings > Billing."
           - action: click
             target: "Downgrade"
             description: "Click 'Downgrade' or 'Cancel plan'."
           - action: click
             target: "Continue"
-            description: "Confirm downgrade to free plan."
+            description: "Confirm downgrade."
 
   - domain: zoom.us
     name: Zoom
     category: software
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Free Basic tier always available."}
+    refund_policy: {window_days: 30, partial_allowed: true}
+    contacts:
+      - channel: web
+        target: "https://support.zoom.us"
+        auth_required: true
+      - channel: chat
+        target: "https://support.zoom.us/hc/en-us/articles/201362003"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Downgrades to Zoom Basic (40-min meeting limit). Account data is preserved."
+        notes: "Downgrades to Basic (40-min limit)."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -381,7 +749,7 @@ services:
             description: "Go to Zoom Billing page."
           - action: click
             target: "Cancel Subscription"
-            description: "Click 'Cancel Subscription' next to your plan."
+            description: "Click 'Cancel Subscription'."
           - action: click
             target: "Confirm"
             description: "Confirm cancellation."
@@ -389,61 +757,85 @@ services:
   - domain: slack.com
     name: Slack
     category: software
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: true, note: "Prorated credit for unused portion."}
+    contacts:
+      - channel: email
+        target: "feedback@slack.com"
+        expected_hold_minutes: 1440
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.90
-        notes: "Must be a Workspace Owner or Billing Admin. Downgrades to free tier."
+        notes: "Must be Workspace Owner/Billing Admin."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://my.slack.com/admin/billing"
-            description: "Go to your Slack workspace Billing page (requires admin access)."
+            description: "Go to Slack Billing page."
           - action: click
             target: "Change plan type"
-            description: "Click 'Change plan type' or 'Manage plan'."
+            description: "Click 'Change plan type'."
           - action: click
             target: "Downgrade to Free"
             description: "Select 'Downgrade to Free'."
           - action: click
             target: "Confirm"
-            description: "Confirm the downgrade."
+            description: "Confirm."
 
   - domain: figma.com
     name: Figma
     category: software
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: email
+        target: "support@figma.com"
+        expected_hold_minutes: 1440
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.90
-        notes: "Must be team admin. Downgrades to Starter (free) plan."
+        notes: "Must be team admin. Downgrades to Starter (free)."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://www.figma.com/settings"
-            description: "Go to Figma Settings for your team."
+            description: "Go to Figma Settings."
           - action: click
             target: "Plan & Billing"
-            description: "Click 'Plan & Billing' tab."
+            description: "Click 'Plan & Billing'."
           - action: click
             target: "Downgrade plan"
             description: "Click 'Downgrade plan'."
           - action: click
             target: "Confirm"
-            description: "Confirm downgrade to Starter."
+            description: "Confirm downgrade."
 
-  # ── Professional / Career ────────────────────────────────────────
+  # ── Professional ─────────────────────────────────────────────────
   - domain: linkedin.com
     name: LinkedIn Premium
     category: professional
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://www.linkedin.com/help/linkedin"
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.95
-        notes: "Reverts to Basic (free) plan. InMail credits and Premium features are lost."
+        notes: "Reverts to Basic (free). InMail credits and Premium features lost."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -451,23 +843,42 @@ services:
             description: "Go to LinkedIn Subscription settings."
           - action: click
             target: "Cancel subscription"
-            description: "Click 'Cancel subscription' or 'Manage Premium account'."
+            description: "Click 'Cancel subscription'."
           - action: click
             target: "Continue to cancel"
-            description: "Navigate through the retention flow."
+            description: "Navigate retention flow."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
-  # ── News / Publishing ────────────────────────────────────────────
+  # ── News ─────────────────────────────────────────────────────────
   - domain: nytimes.com
     name: The New York Times
     category: news
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false, note: "Promotional introductory rates common ($1/week)."}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: phone
+        target: "866-273-3612"
+        hours: "Mon-Fri 7am-6pm ET, Weekends 7am-3pm ET"
+        expected_hold_minutes: 10
+        auth_required: true
+      - channel: chat
+        target: "https://help.nytimes.com"
+        hours: "Mon-Fri 7am-6pm ET, Weekends 7am-3pm ET"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.90
+        retention_offers:
+          - type: discount
+            typical_amount: "50-75% off for 6-12 months"
+            likelihood: high
         notes: "Some subscriptions can only be canceled via phone or chat."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
@@ -479,11 +890,12 @@ services:
             description: "Click 'Subscription Overview'."
           - action: click
             target: "Cancel your subscription"
-            description: "Click 'Cancel your subscription' in the Manage Subscription section."
+            description: "Click 'Cancel your subscription'."
           - action: click
             target: "Confirm"
-            description: "Follow the prompts to confirm cancellation."
-      - method: phone
+            description: "Follow prompts to confirm."
+      - path_type: cancel
+        method: phone
         estimated_time_seconds: 600
         difficulty: medium
         confidence: 0.95
@@ -492,20 +904,28 @@ services:
         steps:
           - action: call
             target: "866-273-3612"
-            description: "Call NYT Customer Care at 866-273-3612."
+            description: "Call NYT Customer Care."
           - action: speak
             target: "cancellation_request"
-            description: "Request subscription cancellation. Have your account email ready."
+            description: "Request cancellation. Have account email ready."
 
   - domain: wsj.com
     name: The Wall Street Journal
     category: news
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: phone
+        target: "1-800-568-7625"
+        hours: "Mon-Fri 7am-10pm ET, Sat 7am-3pm ET"
+        expected_hold_minutes: 10
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.90
-        notes: "Must use the Customer Center to manage subscription."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -513,15 +933,15 @@ services:
             description: "Go to WSJ Customer Center."
           - action: click
             target: "Cancel Subscription"
-            description: "Click 'Cancel Subscription' under Account Management."
+            description: "Click 'Cancel Subscription'."
           - action: click
             target: "Continue"
-            description: "Navigate through retention offers and confirm cancellation."
-      - method: phone
+            description: "Navigate retention and confirm."
+      - path_type: cancel
+        method: phone
         estimated_time_seconds: 600
         difficulty: medium
         confidence: 0.95
-        notes: "Call 1-800-JOURNAL (1-800-568-7625)."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: call
@@ -535,12 +955,27 @@ services:
   - domain: onepeloton.com
     name: Peloton
     category: fitness
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 30, partial_allowed: false, note: "30-day return policy on hardware only."}
+    contacts:
+      - channel: phone
+        target: "1-866-679-9129"
+        hours: "Mon-Fri 9am-9pm ET, Sat-Sun 9am-7pm ET"
+        expected_hold_minutes: 10
+        auth_required: true
+      - channel: chat
+        target: "https://support.onepeloton.com"
+        hours: "Mon-Fri 9am-9pm ET"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.93
-        notes: "App membership vs. All-Access membership have different cancel flows. If purchased via Apple/Google, cancel through that platform."
+        notes: "App vs. All-Access have different cancel flows."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -551,51 +986,85 @@ services:
             description: "Click 'Cancel Membership'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation. You may be offered a pause option."
+            description: "Confirm. Pause option may be offered."
+      - path_type: pause
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.90
+        notes: "Pause All-Access for up to 3 months."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://members.onepeloton.com/settings/subscription"
+            description: "Go to Peloton Membership settings."
+          - action: click
+            target: "Pause Membership"
+            description: "Click 'Pause Membership' and select duration."
 
   - domain: planetfitness.com
     name: Planet Fitness
     category: fitness
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: false}
+    legal_flags: ["IN_PERSON_REQUIRED", "CERTIFIED_MAIL_REQUIRED"]
+    contacts:
+      - channel: phone
+        target: "varies by location"
+        auth_required: true
+        notes: "Call your home club directly."
     paths:
-      - method: in_person
+      - path_type: cancel
+        method: in_person
         estimated_time_seconds: 900
         difficulty: hard
         confidence: 0.90
-        notes: "Most locations require in-person visit or certified letter. Cannot cancel online or by phone at most locations."
+        legal_flags: ["IN_PERSON_REQUIRED"]
+        notes: "Most locations require in-person or certified letter. Cannot cancel online."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: info
             target: "in_person_required"
-            description: "Visit your home Planet Fitness location in person."
+            description: "Visit your home Planet Fitness location."
           - action: speak
             target: "cancellation_request"
-            description: "Request to cancel at the front desk. Bring your membership agreement and photo ID."
+            description: "Request cancellation at front desk. Bring ID."
           - action: sign
             target: "cancellation_form"
-            description: "Fill out and sign the cancellation form."
-      - method: mail
+            description: "Sign the cancellation form."
+      - path_type: cancel
+        method: mail
         estimated_time_seconds: 1200
         difficulty: hard
         confidence: 0.88
-        notes: "Send certified letter to your home club. Include full name, address, date of birth, membership ID."
+        legal_flags: ["CERTIFIED_MAIL_REQUIRED"]
+        notes: "Send certified letter to home club."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: info
             target: "certified_mail"
-            description: "Write a cancellation letter with: full name, address, DOB, phone number, membership ID."
+            description: "Write letter with: full name, address, DOB, phone, membership ID."
           - action: mail
             target: "home_club_address"
-            description: "Mail the letter via certified mail (with return receipt) to your home club address."
+            description: "Mail via certified mail with return receipt to home club."
 
   - domain: headspace.com
     name: Headspace
     category: fitness
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: email
+        target: "help@headspace.com"
+        expected_hold_minutes: 1440
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Access continues until end of billing period."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -606,22 +1075,30 @@ services:
             description: "Click 'Cancel subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   - domain: calm.com
     name: Calm
     category: fitness
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: email
+        target: "help@calm.com"
+        expected_hold_minutes: 1440
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "If purchased via Apple/Google, cancel through that platform's subscription management."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://www.calm.com/account"
-            description: "Go to your Calm Account page."
+            description: "Go to Calm Account page."
           - action: click
             target: "Manage Subscription"
             description: "Click 'Manage Subscription'."
@@ -630,42 +1107,81 @@ services:
             description: "Click 'Cancel Subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   # ── VPN ──────────────────────────────────────────────────────────
   - domain: nordvpn.com
     name: NordVPN
     category: vpn
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 30, partial_allowed: false, note: "30-day money-back guarantee on new purchases."}
+    contacts:
+      - channel: chat
+        target: "https://support.nordvpn.com"
+        hours: "24/7"
+        expected_hold_minutes: 2
+        auth_required: true
+      - channel: email
+        target: "support@nordvpn.com"
+        expected_hold_minutes: 720
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.92
-        notes: "Auto-renewal is canceled; service continues until end of current plan period. 30-day money-back guarantee on new purchases."
+        notes: "Cancels auto-renewal; service continues until end of plan."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://my.nordaccount.com/dashboard/nordvpn/"
-            description: "Go to your Nord Account dashboard."
+            description: "Go to Nord Account dashboard."
           - action: click
             target: "Billing"
-            description: "Click on 'Billing' or 'Subscription'."
+            description: "Click on 'Billing'."
           - action: click
             target: "Cancel automatic payments"
             description: "Click 'Cancel automatic payments'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation of auto-renewal."
+            description: "Confirm cancellation."
+      - path_type: refund
+        method: chat
+        estimated_time_seconds: 300
+        difficulty: easy
+        confidence: 0.92
+        notes: "30-day money-back guarantee. Contact support via chat for fastest processing."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://support.nordvpn.com"
+            description: "Go to NordVPN Support."
+          - action: click
+            target: "Chat"
+            description: "Start live chat."
+          - action: speak
+            target: "refund_request"
+            description: "Request refund under 30-day guarantee. Provide order ID."
 
   - domain: expressvpn.com
     name: ExpressVPN
     category: vpn
+    billing_model: auto_renew
+    refund_policy: {window_days: 30, partial_allowed: false, note: "30-day money-back guarantee."}
+    contacts:
+      - channel: chat
+        target: "https://www.expressvpn.com/support/"
+        hours: "24/7"
+        expected_hold_minutes: 2
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.92
-        notes: "30-day money-back guarantee. Contact support for refund within 30 days."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -679,18 +1195,43 @@ services:
             description: "Click 'Turn off automatic renewal'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
+      - path_type: refund
+        method: chat
+        estimated_time_seconds: 300
+        difficulty: easy
+        confidence: 0.92
+        notes: "30-day money-back guarantee. Chat is the fastest method."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.expressvpn.com/support/"
+            description: "Go to ExpressVPN Support."
+          - action: click
+            target: "Live Chat"
+            description: "Start live chat."
+          - action: speak
+            target: "refund_request"
+            description: "Request refund under 30-day guarantee."
 
-  # ── E-Learning ───────────────────────────────────────────────────
+  # ── Education ────────────────────────────────────────────────────
   - domain: masterclass.com
     name: MasterClass
     category: education
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 30, partial_allowed: false}
+    contacts:
+      - channel: email
+        target: "support@masterclass.com"
+        expected_hold_minutes: 1440
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Access continues until end of billing period."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -701,62 +1242,56 @@ services:
             description: "Click 'Cancel Membership'."
           - action: click
             target: "Continue to cancel"
-            description: "Navigate retention flow and confirm cancellation."
-
-  - domain: skillshare.com
-    name: Skillshare
-    category: education
-    paths:
-      - method: web
-        estimated_time_seconds: 120
-        difficulty: easy
-        confidence: 0.93
-        notes: "Annual plans are not refunded; access continues until end of period."
-        last_verified_at: "2026-05-01T00:00:00Z"
-        steps:
-          - action: navigate
-            target: "https://www.skillshare.com/settings/payments"
-            description: "Go to Skillshare Payment settings."
-          - action: click
-            target: "Cancel"
-            description: "Click 'Cancel' under your subscription."
-          - action: click
-            target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   - domain: coursera.org
     name: Coursera
     category: education
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 14, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://www.coursera.org/about/contact"
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Coursera Plus annual plans may have different cancellation terms."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://www.coursera.org/my-purchases"
-            description: "Go to Coursera My Purchases page."
+            description: "Go to Coursera My Purchases."
           - action: click
             target: "Manage subscription"
-            description: "Click the subscription you want to cancel."
+            description: "Click the subscription."
           - action: click
             target: "Cancel subscription"
             description: "Click 'Cancel subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   - domain: duolingo.com
     name: Duolingo Plus
     category: education
+    billing_model: auto_renew
+    trial_policy: {duration_days: 14, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://support.duolingo.com"
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Reverts to free tier with ads. Streak and progress are kept."
+        notes: "Reverts to free tier with ads. Streak and progress kept."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -764,24 +1299,61 @@ services:
             description: "Go to Duolingo Settings."
           - action: click
             target: "Subscription"
-            description: "Click on 'Subscription' or 'Super Duolingo' section."
+            description: "Click 'Subscription'."
           - action: click
             target: "Cancel subscription"
             description: "Click 'Cancel subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
+
+  - domain: skillshare.com
+    name: Skillshare
+    category: education
+    billing_model: auto_renew
+    trial_policy: {duration_days: 7, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://help.skillshare.com"
+        auth_required: false
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.93
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.skillshare.com/settings/payments"
+            description: "Go to Skillshare Payment settings."
+          - action: click
+            target: "Cancel"
+            description: "Click 'Cancel'."
+          - action: click
+            target: "Confirm"
+            description: "Confirm."
 
   # ── Food Delivery ────────────────────────────────────────────────
   - domain: doordash.com
     name: DoorDash DashPass
     category: food_delivery
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: chat
+        target: "https://help.doordash.com"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Loses free delivery and reduced service fees. Can rejoin anytime."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -792,20 +1364,27 @@ services:
             description: "Click 'Manage DashPass'."
           - action: click
             target: "End Subscription"
-            description: "Click 'End Subscription' or 'Cancel DashPass'."
+            description: "Click 'End Subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   - domain: uber.com
     name: Uber One
     category: food_delivery
+    billing_model: auto_renew
+    trial_policy: {duration_days: 14, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: app
+        target: "Uber app > Help"
+        auth_required: true
     paths:
-      - method: app
+      - path_type: cancel
+        method: app
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Cancel through the Uber app. Loses delivery fee savings and priority support."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -819,17 +1398,26 @@ services:
             description: "Tap 'Cancel Membership'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   - domain: instacart.com
     name: Instacart+
     category: food_delivery
+    billing_model: auto_renew
+    trial_policy: {duration_days: 14, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: chat
+        target: "https://www.instacart.com/help"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Loses free delivery on orders $35+. Can rejoin anytime."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -840,26 +1428,38 @@ services:
             description: "Click 'Cancel membership'."
           - action: click
             target: "Continue to cancel"
-            description: "Navigate retention flow and confirm cancellation."
+            description: "Confirm."
 
   # ── Gaming ───────────────────────────────────────────────────────
   - domain: xbox.com
     name: Xbox Game Pass
     category: gaming
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: false, note: "No refunds for recurring subscriptions."}
+    contacts:
+      - channel: web
+        target: "https://support.xbox.com"
+        auth_required: true
+      - channel: chat
+        target: "https://support.xbox.com/contact-us"
+        hours: "24/7"
+        expected_hold_minutes: 10
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.93
-        notes: "Loses access to Game Pass game library. Purchased games are kept."
+        notes: "Loses Game Pass library. Purchased games kept."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://account.microsoft.com/services/"
-            description: "Go to Microsoft Account Services page."
+            description: "Go to Microsoft Account Services."
           - action: click
             target: "Game Pass"
-            description: "Find your Game Pass subscription."
+            description: "Find Game Pass subscription."
           - action: click
             target: "Manage"
             description: "Click 'Manage'."
@@ -868,17 +1468,31 @@ services:
             description: "Click 'Cancel subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation through Microsoft's flow."
+            description: "Confirm."
 
   - domain: playstation.com
     name: PlayStation Plus
     category: gaming
+    billing_model: auto_renew
+    refund_policy: {window_days: 14, partial_allowed: true, note: "14-day refund if not used."}
+    contacts:
+      - channel: phone
+        target: "1-800-345-7669"
+        hours: "Mon-Fri 8am-8pm PT, Sat-Sun 7am-8pm PT"
+        expected_hold_minutes: 15
+        auth_required: true
+      - channel: chat
+        target: "https://www.playstation.com/support/"
+        hours: "Mon-Fri 8am-8pm PT"
+        expected_hold_minutes: 10
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.93
-        notes: "Access continues until end of paid period. Free monthly games remain in library but become unplayable."
+        notes: "Free monthly games remain in library but become unplayable."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -886,76 +1500,129 @@ services:
             description: "Go to PlayStation subscription management."
           - action: click
             target: "PlayStation Plus"
-            description: "Select your PlayStation Plus subscription."
+            description: "Select PS Plus subscription."
           - action: click
             target: "Turn Off Auto-Renew"
             description: "Click 'Turn Off Auto-Renew'."
           - action: click
             target: "Confirm"
-            description: "Confirm by clicking 'Turn Off'."
+            description: "Confirm."
+      - path_type: downgrade
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.85
+        notes: "Downgrade from Premium/Extra to Essential."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://store.playstation.com/en-us/category/subscription-management"
+            description: "Go to subscription management."
+          - action: click
+            target: "Change Plan"
+            description: "Click 'Change Plan' and select a lower tier."
 
   # ── AI / Tech ────────────────────────────────────────────────────
   - domain: chatgpt.com
     name: ChatGPT Plus
     category: ai
+    billing_model: auto_renew
+    trial_policy: {duration_days: 0, auto_converts: false}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: email
+        target: "support@openai.com"
+        expected_hold_minutes: 2880
+        auth_required: false
+      - channel: web
+        target: "https://help.openai.com"
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.95
-        notes: "Reverts to free tier. Chat history is preserved."
+        notes: "Reverts to free tier. Chat history preserved."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://chatgpt.com/#settings"
-            description: "Open ChatGPT and go to Settings."
+            description: "Open ChatGPT Settings."
           - action: click
             target: "Subscription"
-            description: "Click on 'Subscription' or 'My Plan'."
+            description: "Click 'Subscription' or 'My Plan'."
           - action: click
             target: "Manage my subscription"
             description: "Click 'Manage my subscription'."
           - action: click
             target: "Cancel plan"
-            description: "Click 'Cancel plan' on the Stripe billing portal."
+            description: "Click 'Cancel plan' on Stripe portal."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   - domain: midjourney.com
     name: Midjourney
     category: ai
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://docs.midjourney.com"
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.90
-        notes: "Managed through Midjourney account page. Generated images remain accessible."
+        notes: "Generated images remain accessible."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://www.midjourney.com/account"
-            description: "Go to your Midjourney Account page."
+            description: "Go to Midjourney Account."
           - action: click
             target: "Manage Sub"
-            description: "Click 'Manage Sub' or subscription management link."
+            description: "Click 'Manage Sub'."
           - action: click
             target: "Cancel Plan"
             description: "Click 'Cancel Plan'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
-  # ── E-Commerce / Shopping ────────────────────────────────────────
+  # ── Shopping ─────────────────────────────────────────────────────
   - domain: amazon.com
     name: Amazon Prime
     category: shopping
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: true, note: "Prorated refund if no Prime benefits used."}
+    legal_flags: ["CA_ARL", "FTC_ROSCA"]
+    contacts:
+      - channel: chat
+        target: "https://www.amazon.com/gp/help/customer/contact-us"
+        hours: "24/7"
+        expected_hold_minutes: 3
+        auth_required: true
+      - channel: phone
+        target: "1-888-280-4331"
+        hours: "24/7"
+        expected_hold_minutes: 5
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 240
         difficulty: medium
         confidence: 0.95
-        notes: "Multiple confirmation screens. Amazon may offer partial refund or reduced-price plan. Loses Prime Video, free shipping, etc."
+        retention_offers:
+          - type: reduced_plan
+            typical_amount: "Prime Lite or quarterly billing"
+            likelihood: medium
+        notes: "Multiple confirmation screens. Amazon shows what you'll lose."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -963,102 +1630,122 @@ services:
             description: "Go to Amazon Prime membership management."
           - action: click
             target: "Manage Membership"
-            description: "Click 'Manage Membership' or 'Update, cancel and more'."
+            description: "Click 'Manage Membership'."
           - action: click
             target: "End Membership"
-            description: "Click 'End Membership' or 'Cancel my benefits'."
+            description: "Click 'End Membership'."
           - action: click
             target: "Continue to Cancel"
-            description: "Navigate through 2-3 confirmation screens. Amazon shows what you'll lose."
+            description: "Navigate 2-3 confirmation screens."
           - action: click
             target: "Cancel Membership"
-            description: "Click final 'Cancel Membership' or 'End on [date]' button."
+            description: "Click final 'Cancel Membership' button."
+      - path_type: refund
+        method: chat
+        estimated_time_seconds: 300
+        difficulty: easy
+        confidence: 0.90
+        notes: "Prorated refund if no Prime benefits used since last renewal."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.amazon.com/gp/help/customer/contact-us"
+            description: "Go to Amazon Contact Us."
+          - action: click
+            target: "Chat"
+            description: "Start chat."
+          - action: speak
+            target: "refund_request"
+            description: "Request Prime refund. Cite no-benefits-used policy."
 
-  # ── Telecom / Radio ─────────────────────────────────────────────
+  # ── Entertainment ────────────────────────────────────────────────
   - domain: siriusxm.com
     name: SiriusXM
     category: entertainment
+    billing_model: auto_renew
+    trial_policy: {duration_days: 90, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: true}
+    legal_flags: ["AGGRESSIVE_RETENTION"]
+    contacts:
+      - channel: phone
+        target: "1-866-635-2349"
+        hours: "Mon-Sun 8am-8pm ET"
+        expected_hold_minutes: 20
+        auth_required: true
+      - channel: chat
+        target: "https://www.siriusxm.com/help"
+        hours: "Mon-Sun 8am-8pm ET"
+        expected_hold_minutes: 15
+        auth_required: true
     paths:
-      - method: phone
+      - path_type: cancel
+        method: phone
         estimated_time_seconds: 900
         difficulty: hard
         confidence: 0.92
-        notes: "SiriusXM is notorious for aggressive retention. Expect multiple discount offers. Be firm."
+        retention_offers:
+          - type: discount
+            typical_amount: "50-60% off for 3-6 months"
+            likelihood: very_high
+          - type: free_months
+            typical_amount: "1-3 months free"
+            likelihood: high
+        notes: "Notorious for aggressive retention. Expect multiple discount offers. Be firm."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: call
             target: "1-866-635-2349"
-            description: "Call SiriusXM at 1-866-635-2349."
+            description: "Call SiriusXM."
           - action: speak
             target: "cancel"
-            description: "Say 'Cancel' to the automated system to be routed to retention."
+            description: "Say 'Cancel' to the automated system."
           - action: speak
             target: "cancellation_request"
-            description: "Tell the agent you want to cancel. Be prepared for multiple discount offers."
+            description: "Tell agent you want to cancel. Be prepared for offers."
           - action: speak
             target: "firm_decline"
-            description: "Firmly decline all retention offers and request immediate cancellation."
+            description: "Firmly decline all offers."
           - action: speak
             target: "confirmation_number"
-            description: "Ask for a cancellation confirmation number."
-      - method: chat
+            description: "Ask for confirmation number."
+      - path_type: cancel
+        method: chat
         estimated_time_seconds: 600
         difficulty: hard
         confidence: 0.88
-        notes: "Online chat is available but agents will push hard to retain you."
+        retention_offers:
+          - type: discount
+            typical_amount: "50-60% off for 3-6 months"
+            likelihood: very_high
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://www.siriusxm.com/help"
-            description: "Go to SiriusXM Help page."
+            description: "Go to SiriusXM Help."
           - action: click
             target: "Chat"
-            description: "Click 'Chat' or 'Contact Us' to start a live chat."
+            description: "Start live chat."
           - action: speak
             target: "cancellation_request"
-            description: "Request subscription cancellation via chat. Decline retention offers."
+            description: "Request cancellation. Decline offers."
 
-  # ── YouTube ──────────────────────────────────────────────────────
-  - domain: youtube.com
-    name: YouTube Premium
-    category: streaming
-    paths:
-      - method: web
-        estimated_time_seconds: 120
-        difficulty: easy
-        confidence: 0.97
-        notes: "Loses ad-free viewing, background play, and YouTube Music Premium (if bundled)."
-        last_verified_at: "2026-05-01T00:00:00Z"
-        steps:
-          - action: navigate
-            target: "https://www.youtube.com/paid_memberships"
-            description: "Go to YouTube paid memberships page."
-          - action: click
-            target: "Manage membership"
-            description: "Click 'Manage membership'."
-          - action: click
-            target: "Deactivate"
-            description: "Click 'Deactivate'."
-          - action: click
-            target: "Continue to cancel"
-            description: "Click 'Continue to cancel'."
-          - action: select
-            target: "cancellation_reason"
-            description: "Select a reason for canceling."
-          - action: click
-            target: "Yes, cancel"
-            description: "Click 'Yes, cancel' to confirm."
-
-  # ── Cloud Storage ────────────────────────────────────────────────
+  # ── Cloud ────────────────────────────────────────────────────────
   - domain: one.google.com
     name: Google One
     category: cloud
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://one.google.com/support"
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.95
-        notes: "Storage reverts to free 15GB. If over limit, uploads stop but files are not deleted immediately."
+        notes: "Storage reverts to free 15GB."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -1069,42 +1756,72 @@ services:
             description: "Click 'Cancel membership'."
           - action: click
             target: "Continue to cancel"
-            description: "Confirm cancellation."
+            description: "Confirm."
+      - path_type: downgrade
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Downgrade to a lower storage tier."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://one.google.com/settings"
+            description: "Go to Google One settings."
+          - action: click
+            target: "Change plan"
+            description: "Click 'Change plan' and select lower tier."
 
   - domain: icloud.com
     name: iCloud+
     category: cloud
+    billing_model: auto_renew
+    refund_policy: {window_days: 14, partial_allowed: false}
+    contacts:
+      - channel: phone
+        target: "1-800-275-2273"
+        hours: "24/7"
+        expected_hold_minutes: 10
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.90
-        notes: "Storage reverts to free 5GB. Data over limit may become inaccessible."
+        notes: "Storage reverts to free 5GB."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "Settings > [Your Name] > Subscriptions on iPhone/iPad"
-            description: "On iPhone/iPad: Settings > [Your Name] > Subscriptions."
+            description: "On device: Settings > [Your Name] > Subscriptions."
           - action: click
             target: "iCloud+"
-            description: "Tap your iCloud+ subscription."
+            description: "Tap iCloud+."
           - action: click
             target: "Cancel Subscription"
             description: "Tap 'Cancel Subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   # ── Dating ───────────────────────────────────────────────────────
   - domain: tinder.com
     name: Tinder Plus/Gold/Platinum
     category: dating
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://www.help.tinder.com"
+        auth_required: false
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.90
-        notes: "Must cancel through the platform you subscribed on (App Store, Google Play, or tinder.com)."
+        notes: "Cancel through the platform you subscribed on."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -1118,17 +1835,26 @@ services:
             description: "Click 'Cancel Subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
   - domain: match.com
     name: Match.com
     category: dating
+    billing_model: auto_renew
+    refund_policy: {window_days: 3, partial_allowed: false, note: "3-day refund window in some states."}
+    contacts:
+      - channel: phone
+        target: "1-800-926-2824"
+        hours: "Mon-Fri 8am-5pm CT"
+        expected_hold_minutes: 10
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 180
         difficulty: medium
         confidence: 0.90
-        notes: "Profile remains visible after cancellation unless you hide it."
+        notes: "Profile remains visible unless hidden."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
@@ -1139,26 +1865,33 @@ services:
             description: "Click 'Cancel my subscription'."
           - action: click
             target: "Continue"
-            description: "Navigate through retention flow."
+            description: "Navigate retention flow."
           - action: click
             target: "Confirm"
-            description: "Confirm cancellation."
+            description: "Confirm."
 
-  # ── Misc ─────────────────────────────────────────────────────────
+  # ── Misc Software ────────────────────────────────────────────────
   - domain: evernote.com
     name: Evernote
     category: software
+    billing_model: auto_renew
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://help.evernote.com"
+        auth_required: true
     paths:
-      - method: web
+      - path_type: cancel
+        method: web
         estimated_time_seconds: 120
         difficulty: easy
         confidence: 0.93
-        notes: "Downgrades to free plan. Notes are preserved but some features restricted."
+        notes: "Downgrades to free. Notes preserved."
         last_verified_at: "2026-05-01T00:00:00Z"
         steps:
           - action: navigate
             target: "https://www.evernote.com/Settings.action"
-            description: "Go to Evernote Account Settings."
+            description: "Go to Evernote Settings."
           - action: click
             target: "Manage Subscription"
             description: "Click 'Manage Subscription'."
@@ -1167,4 +1900,39 @@ services:
             description: "Click 'Cancel Subscription'."
           - action: click
             target: "Confirm"
-            description: "Confirm downgrade to free."
+            description: "Confirm."
+
+  - domain: music.youtube.com
+    name: YouTube Music Premium
+    category: music
+    billing_model: auto_renew
+    trial_policy: {duration_days: 30, auto_converts: true, cancel_during_trial: true}
+    refund_policy: {window_days: 0, partial_allowed: false}
+    contacts:
+      - channel: web
+        target: "https://support.google.com/youtubemusic"
+        auth_required: true
+    paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.95
+        notes: "Also cancels YouTube Premium if bundled."
+        last_verified_at: "2026-05-01T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.youtube.com/paid_memberships"
+            description: "Go to YouTube paid memberships."
+          - action: click
+            target: "Manage membership"
+            description: "Click 'Manage membership'."
+          - action: click
+            target: "Deactivate"
+            description: "Click 'Deactivate'."
+          - action: click
+            target: "Continue to cancel"
+            description: "Click 'Continue to cancel'."
+          - action: click
+            target: "Yes, cancel"
+            description: "Confirm."

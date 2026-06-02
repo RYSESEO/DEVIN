@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_api_key, record_usage
 from app.database import get_db
-from app.models import ApiKey, CancellationPath, Service
+from app.models import ApiKey, LifecyclePath, Service
 from app.schemas import (
     CancellationPathResponse,
     CancelResponse,
@@ -14,14 +14,14 @@ from app.schemas import (
     SupportedResponse,
 )
 
-router = APIRouter(prefix="/v1", tags=["Cancellation Paths"])
+router = APIRouter(prefix="/v1", tags=["Cancel (backwards-compatible)"])
 
 
 def normalize_domain(domain: str) -> str:
     domain = domain.lower().strip()
     for prefix in ("https://", "http://", "www."):
         if domain.startswith(prefix):
-            domain = domain[len(prefix) :]
+            domain = domain[len(prefix):]
     return domain.rstrip("/")
 
 
@@ -39,10 +39,20 @@ def get_cancellation_path(
     if not service:
         raise HTTPException(
             status_code=404,
-            detail=f"No cancellation path found for '{domain}'. Use POST /v1/contribute to add it.",
+            detail=(
+                f"No cancellation path found for '{domain}'. "
+                "Use POST /v1/contribute to add it."
+            ),
         )
 
-    paths = db.query(CancellationPath).filter(CancellationPath.service_id == service.id).all()
+    paths = (
+        db.query(LifecyclePath)
+        .filter(
+            LifecyclePath.service_id == service.id,
+            LifecyclePath.path_type == "cancel",
+        )
+        .all()
+    )
 
     return CancelResponse(
         domain=service.domain,
@@ -55,6 +65,8 @@ def get_cancellation_path(
                 estimated_time_seconds=p.estimated_time_seconds,
                 difficulty=p.difficulty,
                 confidence=p.confidence,
+                complexity_score=p.complexity_score,
+                retention_offers=p.retention_offers,
                 notes=p.notes,
                 last_verified_at=p.last_verified_at,
             )
@@ -75,11 +87,20 @@ def check_supported(
 
     service = db.query(Service).filter(Service.domain == domain).first()
     if service:
+        path_types = sorted(
+            {
+                p.path_type
+                for p in db.query(LifecyclePath)
+                .filter(LifecyclePath.service_id == service.id)
+                .all()
+            }
+        )
         return SupportedResponse(
             domain=domain,
             supported=True,
             service_name=service.name,
             category=service.category,
+            available_path_types=path_types,
         )
     return SupportedResponse(domain=domain, supported=False)
 
@@ -108,13 +129,24 @@ def list_services(
 
     total = query.count()
     total_pages = max(1, math.ceil(total / per_page))
-    services = query.order_by(Service.name).offset((page - 1) * per_page).limit(per_page).all()
+    services = (
+        query.order_by(Service.name)
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
 
     items: list[ServiceListItem] = []
     for svc in services:
-        paths = db.query(CancellationPath).filter(CancellationPath.service_id == svc.id).all()
-        difficulty = paths[0].difficulty if paths else "unknown"
+        paths = (
+            db.query(LifecyclePath)
+            .filter(LifecyclePath.service_id == svc.id)
+            .all()
+        )
+        cancel_paths = [p for p in paths if p.path_type == "cancel"]
+        difficulty = cancel_paths[0].difficulty if cancel_paths else "unknown"
         methods = sorted({p.method for p in paths})
+        path_types = sorted({p.path_type for p in paths})
         items.append(
             ServiceListItem(
                 domain=svc.domain,
@@ -122,6 +154,8 @@ def list_services(
                 category=svc.category,
                 difficulty=difficulty,
                 methods=methods,
+                path_types=path_types,
+                billing_model=svc.billing_model,
             )
         )
 
