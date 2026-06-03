@@ -2,7 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -45,7 +45,26 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
+        "Retry-After",
+    ],
 )
+
+
+@app.middleware("http")
+async def rate_limit_headers(request: Request, call_next) -> Response:
+    response: Response = await call_next(request)
+    if hasattr(request.state, "rate_limit_daily"):
+        daily_remaining = max(
+            0, request.state.rate_limit_daily - request.state.rate_limit_daily_used - 1
+        )
+        response.headers["X-RateLimit-Limit"] = str(request.state.rate_limit_daily)
+        response.headers["X-RateLimit-Remaining"] = str(daily_remaining)
+    return response
+
 
 app.include_router(service.router)
 app.include_router(cancel.router)

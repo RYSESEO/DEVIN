@@ -8,6 +8,11 @@ from pydantic import BaseModel, Field
 class ApiKeyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     email: str = Field(..., min_length=5, max_length=255)
+    tier: str = Field(
+        default="free",
+        pattern=r"^(free|starter|growth|enterprise)$",
+        description="Pricing tier. Determines rate limits.",
+    )
 
 
 class ReportCreate(BaseModel):

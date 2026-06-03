@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth import generate_api_key, get_api_key, record_usage
-from app.config import settings
+from app.config import TIER_LIMITS
 from app.database import get_db
 from app.models import ApiKey, Report, UsageRecord
 from app.schemas import (
@@ -72,7 +72,7 @@ def create_api_key(
     body: ApiKeyCreate,
     db: Session = Depends(get_db),
 ):
-    """Create a new free-tier API key."""
+    """Create a new API key. Specify tier for rate limit allocation."""
     existing = (
         db.query(ApiKey).filter(ApiKey.email == body.email, ApiKey.is_active.is_(True)).first()
     )
@@ -82,13 +82,15 @@ def create_api_key(
             detail="An active API key already exists for this email.",
         )
 
+    limits = TIER_LIMITS.get(body.tier, TIER_LIMITS["free"])
+
     key = ApiKey(
         key=generate_api_key(),
         name=body.name,
         email=body.email,
-        tier="free",
-        daily_limit=settings.default_daily_limit,
-        monthly_limit=settings.default_monthly_limit,
+        tier=body.tier,
+        daily_limit=limits["daily"],
+        monthly_limit=limits["monthly"],
     )
     db.add(key)
     db.commit()
