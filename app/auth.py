@@ -1,5 +1,6 @@
 import secrets
 from datetime import datetime, timezone
+from typing import Callable
 
 from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
@@ -10,6 +11,20 @@ from app.database import get_db
 from app.models import ApiKey, UsageRecord
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+# Tier hierarchy for feature gating
+TIER_RANK = {"free": 0, "starter": 1, "growth": 2, "enterprise": 3}
+
+# Which tiers can access which endpoint groups
+TIER_GATES: dict[str, str] = {
+    "/v1/signals": "starter",
+    "/v1/billing": "starter",
+    "/v1/webhooks": "growth",
+    "/v1/monitor/run": "growth",
+    "/v1/monitor/verify": "growth",
+    "/v1/monitor/decay": "enterprise",
+    "/v1/monitor/report-check": "enterprise",
+}
 
 
 def generate_api_key() -> str:
@@ -83,6 +98,45 @@ def get_api_key(
         )
 
     return key_record
+
+
+def require_tier(min_tier: str) -> Callable:
+    """Dependency that enforces a minimum pricing tier."""
+    required_rank = TIER_RANK.get(min_tier, 0)
+
+    def _check(api_key: ApiKey = Depends(get_api_key)) -> ApiKey:
+        key_rank = TIER_RANK.get(api_key.tier, 0)
+        if key_rank < required_rank:
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"This endpoint requires the '{min_tier}' tier or above. "
+                    f"Your current tier: '{api_key.tier}'. "
+                    "Upgrade at https://cancelkit.dev/pricing"
+                ),
+            )
+        return api_key
+
+    return _check
+
+
+def check_tier_gate(request: Request, api_key: ApiKey) -> None:
+    """Check if the current request path requires a higher tier."""
+    path = request.url.path
+    for gate_prefix, min_tier in TIER_GATES.items():
+        if path.startswith(gate_prefix):
+            required_rank = TIER_RANK.get(min_tier, 0)
+            key_rank = TIER_RANK.get(api_key.tier, 0)
+            if key_rank < required_rank:
+                raise HTTPException(
+                    status_code=403,
+                    detail=(
+                        f"This endpoint requires the '{min_tier}' tier or above. "
+                        f"Your current tier: '{api_key.tier}'. "
+                        "Upgrade at https://cancelkit.dev/pricing"
+                    ),
+                )
+            break
 
 
 def record_usage(db: Session, api_key: ApiKey, endpoint: str, domain: str | None = None):

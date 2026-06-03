@@ -32,7 +32,20 @@ ENABLE_SCHEDULER = os.getenv("CANCELKIT_SCHEDULER", "true").lower() in ("true", 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    # Run Alembic migrations if available; fall back to create_all for dev/testing
+    try:
+        from alembic.config import Config as AlembicConfig
+
+        from alembic import command as alembic_cmd
+
+        alembic_cfg = AlembicConfig("alembic.ini")
+        alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
+        alembic_cmd.upgrade(alembic_cfg, "head")
+        logger.info("Alembic migrations applied.")
+    except Exception:
+        logger.info("Alembic unavailable — using create_all fallback.")
+        Base.metadata.create_all(bind=engine)
+
     db = SessionLocal()
     try:
         count = seed_database(db)

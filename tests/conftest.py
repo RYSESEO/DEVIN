@@ -57,3 +57,33 @@ def api_key(client: TestClient):
     resp = client.post("/v1/keys", json={"name": "Test User", "email": "test@example.com"})
     assert resp.status_code == 201
     return resp.json()["key"]
+
+
+@pytest.fixture
+def enterprise_key(client: TestClient):
+    resp = client.post(
+        "/v1/keys",
+        json={"name": "Enterprise Test", "email": "enterprise@example.com", "tier": "enterprise"},
+    )
+    assert resp.status_code == 201
+    return resp.json()["key"]
+
+
+@pytest.fixture
+def growth_key(client: TestClient):
+    resp = client.post(
+        "/v1/keys",
+        json={"name": "Growth Test", "email": "growth@example.com", "tier": "growth"},
+    )
+    assert resp.status_code == 201
+    return resp.json()["key"]
+
+
+@pytest.fixture
+def starter_key(client: TestClient):
+    resp = client.post(
+        "/v1/keys",
+        json={"name": "Starter Test", "email": "starter@example.com", "tier": "starter"},
+    )
+    assert resp.status_code == 201
+    return resp.json()["key"]

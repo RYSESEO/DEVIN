@@ -255,12 +255,12 @@ class TestMonitorHistory:
 
 class TestMonitorRun:
     @patch("app.routers.monitoring.run_monitor_check")
-    def test_run_returns_results(self, mock_check, client, api_key):
+    def test_run_returns_results(self, mock_check, client, growth_key):
         mock_result = type("MockResult", (), {"changed": False})()
         mock_check.return_value = [mock_result]
 
         resp = client.post(
-            "/v1/monitor/run?domain=netflix.com", headers={"X-API-Key": api_key}
+            "/v1/monitor/run?domain=netflix.com", headers={"X-API-Key": growth_key}
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -269,19 +269,24 @@ class TestMonitorRun:
         assert "changes_detected" in data
         assert data["status"] in ("all_ok", "changes_detected")
 
-    def test_run_not_found(self, client, api_key):
+    def test_run_not_found(self, client, growth_key):
         resp = client.post(
-            "/v1/monitor/run?domain=nonexistent.com", headers={"X-API-Key": api_key}
+            "/v1/monitor/run?domain=nonexistent.com", headers={"X-API-Key": growth_key}
         )
         assert resp.status_code == 404
+
+    def test_run_blocked_for_free_tier(self, client, api_key):
+        resp = client.post(
+            "/v1/monitor/run?domain=netflix.com", headers={"X-API-Key": api_key}
+        )
+        assert resp.status_code == 403
 
 
 # ── Verify endpoint ──────────────────────────────────────────────────
 
 
 class TestMonitorVerify:
-    def test_verify_resets_confidence(self, client, api_key, db):
-        # Lower confidence first
+    def test_verify_resets_confidence(self, client, growth_key, db):
         path = (
             db.query(LifecyclePath)
             .join(Service)
@@ -292,7 +297,7 @@ class TestMonitorVerify:
         db.commit()
 
         resp = client.post(
-            "/v1/monitor/verify/netflix.com", headers={"X-API-Key": api_key}
+            "/v1/monitor/verify/netflix.com", headers={"X-API-Key": growth_key}
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -302,7 +307,7 @@ class TestMonitorVerify:
         db.refresh(path)
         assert path.confidence == 0.95
 
-    def test_verify_resolves_stale_flags(self, client, api_key, db):
+    def test_verify_resolves_stale_flags(self, client, growth_key, db):
         service = db.query(Service).filter(Service.domain == "netflix.com").first()
         db.add(StaleFlag(
             service_id=service.id,
@@ -312,7 +317,7 @@ class TestMonitorVerify:
         db.commit()
 
         resp = client.post(
-            "/v1/monitor/verify/netflix.com", headers={"X-API-Key": api_key}
+            "/v1/monitor/verify/netflix.com", headers={"X-API-Key": growth_key}
         )
         data = resp.json()
         assert data["stale_flags_resolved"] == 1
@@ -320,16 +325,16 @@ class TestMonitorVerify:
         flag = db.query(StaleFlag).first()
         assert flag.resolved is True
 
-    def test_verify_not_found(self, client, api_key):
+    def test_verify_not_found(self, client, growth_key):
         resp = client.post(
-            "/v1/monitor/verify/nonexistent.com", headers={"X-API-Key": api_key}
+            "/v1/monitor/verify/nonexistent.com", headers={"X-API-Key": growth_key}
         )
         assert resp.status_code == 404
 
-    def test_verify_by_path_type(self, client, api_key, db):
+    def test_verify_by_path_type(self, client, growth_key, db):
         resp = client.post(
             "/v1/monitor/verify/netflix.com?path_type=cancel",
-            headers={"X-API-Key": api_key},
+            headers={"X-API-Key": growth_key},
         )
         assert resp.status_code == 200
         assert resp.json()["paths_updated"] >= 1
@@ -339,32 +344,42 @@ class TestMonitorVerify:
 
 
 class TestDecayEndpoint:
-    def test_trigger_decay(self, client, api_key):
-        resp = client.post("/v1/monitor/decay", headers={"X-API-Key": api_key})
+    def test_trigger_decay(self, client, enterprise_key):
+        resp = client.post("/v1/monitor/decay", headers={"X-API-Key": enterprise_key})
         assert resp.status_code == 200
         assert "paths_decayed" in resp.json()
+
+    def test_decay_blocked_for_free_tier(self, client, api_key):
+        resp = client.post("/v1/monitor/decay", headers={"X-API-Key": api_key})
+        assert resp.status_code == 403
 
 
 # ── Report check endpoint ────────────────────────────────────────────
 
 
 class TestReportCheckEndpoint:
-    def test_trigger_report_check(self, client, api_key):
+    def test_trigger_report_check(self, client, enterprise_key):
         resp = client.post(
-            "/v1/monitor/report-check", headers={"X-API-Key": api_key}
+            "/v1/monitor/report-check", headers={"X-API-Key": enterprise_key}
         )
         assert resp.status_code == 200
         assert "services_auto_flagged" in resp.json()
+
+    def test_report_check_blocked_for_free_tier(self, client, api_key):
+        resp = client.post(
+            "/v1/monitor/report-check", headers={"X-API-Key": api_key}
+        )
+        assert resp.status_code == 403
 
 
 # ── Webhook CRUD ─────────────────────────────────────────────────────
 
 
 class TestWebhookCRUD:
-    def test_create_webhook(self, client, api_key):
+    def test_create_webhook(self, client, growth_key):
         resp = client.post(
             "/v1/webhooks?url=https://example.com/hook&events=path_stale",
-            headers={"X-API-Key": api_key},
+            headers={"X-API-Key": growth_key},
         )
         assert resp.status_code == 201
         data = resp.json()
@@ -373,77 +388,82 @@ class TestWebhookCRUD:
         assert data["signing_secret"] is not None
         assert data["is_active"] is True
 
-    def test_create_webhook_both_events(self, client, api_key):
+    def test_create_webhook_both_events(self, client, growth_key):
         resp = client.post(
             "/v1/webhooks?url=https://example.com/hook&events=path_stale,path_fixed",
-            headers={"X-API-Key": api_key},
+            headers={"X-API-Key": growth_key},
         )
         assert resp.status_code == 201
         data = resp.json()
         assert "path_stale" in data["events"]
         assert "path_fixed" in data["events"]
 
-    def test_create_webhook_invalid_event(self, client, api_key):
+    def test_create_webhook_invalid_event(self, client, growth_key):
         resp = client.post(
             "/v1/webhooks?url=https://example.com/hook&events=invalid_event",
-            headers={"X-API-Key": api_key},
+            headers={"X-API-Key": growth_key},
         )
         assert resp.status_code == 400
 
-    def test_list_webhooks(self, client, api_key):
-        # Create one first
+    def test_list_webhooks(self, client, growth_key):
         client.post(
             "/v1/webhooks?url=https://example.com/hook&events=path_stale",
-            headers={"X-API-Key": api_key},
+            headers={"X-API-Key": growth_key},
         )
 
-        resp = client.get("/v1/webhooks", headers={"X-API-Key": api_key})
+        resp = client.get("/v1/webhooks", headers={"X-API-Key": growth_key})
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["webhooks"]) == 1
         assert data["webhooks"][0]["url"] == "https://example.com/hook"
 
-    def test_delete_webhook(self, client, api_key):
+    def test_delete_webhook(self, client, growth_key):
         create_resp = client.post(
             "/v1/webhooks?url=https://example.com/hook&events=path_stale",
-            headers={"X-API-Key": api_key},
+            headers={"X-API-Key": growth_key},
         )
         wh_id = create_resp.json()["id"]
 
         resp = client.delete(
-            f"/v1/webhooks/{wh_id}", headers={"X-API-Key": api_key}
+            f"/v1/webhooks/{wh_id}", headers={"X-API-Key": growth_key}
         )
         assert resp.status_code == 200
         assert resp.json()["status"] == "deleted"
 
-        # Verify gone
-        list_resp = client.get("/v1/webhooks", headers={"X-API-Key": api_key})
+        list_resp = client.get("/v1/webhooks", headers={"X-API-Key": growth_key})
         assert len(list_resp.json()["webhooks"]) == 0
 
-    def test_delete_webhook_not_found(self, client, api_key):
-        resp = client.delete("/v1/webhooks/99999", headers={"X-API-Key": api_key})
+    def test_delete_webhook_not_found(self, client, growth_key):
+        resp = client.delete("/v1/webhooks/99999", headers={"X-API-Key": growth_key})
         assert resp.status_code == 404
 
-    def test_webhook_deliveries_empty(self, client, api_key):
+    def test_webhook_deliveries_empty(self, client, growth_key):
         create_resp = client.post(
             "/v1/webhooks?url=https://example.com/hook&events=path_stale",
-            headers={"X-API-Key": api_key},
+            headers={"X-API-Key": growth_key},
         )
         wh_id = create_resp.json()["id"]
 
         resp = client.get(
-            f"/v1/webhooks/{wh_id}/deliveries", headers={"X-API-Key": api_key}
+            f"/v1/webhooks/{wh_id}/deliveries", headers={"X-API-Key": growth_key}
         )
         assert resp.status_code == 200
         data = resp.json()
         assert data["webhook_id"] == wh_id
         assert data["deliveries"] == []
 
-    def test_webhook_deliveries_not_found(self, client, api_key):
+    def test_webhook_deliveries_not_found(self, client, growth_key):
         resp = client.get(
-            "/v1/webhooks/99999/deliveries", headers={"X-API-Key": api_key}
+            "/v1/webhooks/99999/deliveries", headers={"X-API-Key": growth_key}
         )
         assert resp.status_code == 404
+
+    def test_webhooks_blocked_for_free_tier(self, client, api_key):
+        resp = client.post(
+            "/v1/webhooks?url=https://example.com/hook&events=path_stale",
+            headers={"X-API-Key": api_key},
+        )
+        assert resp.status_code == 403
 
 
 # ── Dashboard monitoring endpoints ───────────────────────────────────

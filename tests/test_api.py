@@ -11,7 +11,7 @@ class TestHealthCheck:
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "ok"
-        assert data["version"] == "0.3.0"
+        assert data["version"] == "0.4.0"
 
 
 # ── API Keys ─────────────────────────────────────────────────────────
@@ -328,9 +328,9 @@ class TestLifecyclePathEndpoint:
 
 
 class TestBillingEndpoint:
-    def test_get_billing(self, client: TestClient, api_key: str):
+    def test_get_billing(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/billing/netflix.com", headers={"X-API-Key": api_key}
+            "/v1/billing/netflix.com", headers={"X-API-Key": starter_key}
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -339,32 +339,32 @@ class TestBillingEndpoint:
         assert data["trial_policy"] is not None
         assert data["refund_policy"] is not None
 
-    def test_billing_refund_policy(self, client: TestClient, api_key: str):
+    def test_billing_refund_policy(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/billing/nordvpn.com", headers={"X-API-Key": api_key}
+            "/v1/billing/nordvpn.com", headers={"X-API-Key": starter_key}
         )
         data = resp.json()
         assert data["refund_policy"]["window_days"] == 30
 
-    def test_billing_trial_policy(self, client: TestClient, api_key: str):
+    def test_billing_trial_policy(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/billing/hulu.com", headers={"X-API-Key": api_key}
+            "/v1/billing/hulu.com", headers={"X-API-Key": starter_key}
         )
         data = resp.json()
         assert data["trial_policy"]["duration_days"] == 30
         assert data["trial_policy"]["auto_converts"] is True
 
-    def test_billing_legal_flags(self, client: TestClient, api_key: str):
+    def test_billing_legal_flags(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/billing/adobe.com", headers={"X-API-Key": api_key}
+            "/v1/billing/adobe.com", headers={"X-API-Key": starter_key}
         )
         data = resp.json()
         assert data["legal_flags"] is not None
         assert "ETF_DISCLOSURE" in data["legal_flags"]
 
-    def test_billing_not_found(self, client: TestClient, api_key: str):
+    def test_billing_not_found(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/billing/nonexistent.com", headers={"X-API-Key": api_key}
+            "/v1/billing/nonexistent.com", headers={"X-API-Key": starter_key}
         )
         assert resp.status_code == 404
 
@@ -404,9 +404,9 @@ class TestContactEndpoint:
 
 
 class TestSignalsEndpoint:
-    def test_get_signals(self, client: TestClient, api_key: str):
+    def test_get_signals(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/signals/netflix.com", headers={"X-API-Key": api_key}
+            "/v1/signals/netflix.com", headers={"X-API-Key": starter_key}
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -415,9 +415,9 @@ class TestSignalsEndpoint:
         assert len(data["recommended_actions"]) > 0
         assert data["complexity_score"] >= 0
 
-    def test_signals_retention_offers(self, client: TestClient, api_key: str):
+    def test_signals_retention_offers(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/signals/adobe.com", headers={"X-API-Key": api_key}
+            "/v1/signals/adobe.com", headers={"X-API-Key": starter_key}
         )
         data = resp.json()
         assert len(data["likely_retention_offers"]) > 0
@@ -425,23 +425,23 @@ class TestSignalsEndpoint:
         actions_lower = [a.lower() for a in data["recommended_actions"]]
         assert any("retention" in a or "discount" in a for a in actions_lower)
 
-    def test_signals_recommends_pause(self, client: TestClient, api_key: str):
+    def test_signals_recommends_pause(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/signals/netflix.com", headers={"X-API-Key": api_key}
+            "/v1/signals/netflix.com", headers={"X-API-Key": starter_key}
         )
         data = resp.json()
         assert any("pause" in a.lower() for a in data["recommended_actions"])
 
-    def test_signals_recommends_downgrade(self, client: TestClient, api_key: str):
+    def test_signals_recommends_downgrade(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/signals/spotify.com", headers={"X-API-Key": api_key}
+            "/v1/signals/spotify.com", headers={"X-API-Key": starter_key}
         )
         data = resp.json()
         assert any("downgrade" in a.lower() for a in data["recommended_actions"])
 
-    def test_signals_not_found(self, client: TestClient, api_key: str):
+    def test_signals_not_found(self, client: TestClient, starter_key: str):
         resp = client.get(
-            "/v1/signals/nonexistent.com", headers={"X-API-Key": api_key}
+            "/v1/signals/nonexistent.com", headers={"X-API-Key": starter_key}
         )
         assert resp.status_code == 404
 
@@ -529,3 +529,119 @@ class TestUsageEndpoint:
         data = resp.json()
         assert data["today"] >= 1
         assert data["tier"] == "free"
+
+
+# ── Tier-Based Feature Gating ────────────────────────────────────────
+
+
+class TestTierGating:
+    def test_free_tier_blocked_from_signals(self, client: TestClient, api_key: str):
+        resp = client.get("/v1/signals/netflix.com", headers={"X-API-Key": api_key})
+        assert resp.status_code == 403
+        assert "starter" in resp.json()["detail"].lower()
+
+    def test_free_tier_blocked_from_billing(self, client: TestClient, api_key: str):
+        resp = client.get("/v1/billing/netflix.com", headers={"X-API-Key": api_key})
+        assert resp.status_code == 403
+
+    def test_free_tier_can_access_cancel(self, client: TestClient, api_key: str):
+        resp = client.get("/v1/cancel/netflix.com", headers={"X-API-Key": api_key})
+        assert resp.status_code == 200
+
+    def test_free_tier_can_access_services(self, client: TestClient, api_key: str):
+        resp = client.get("/v1/services", headers={"X-API-Key": api_key})
+        assert resp.status_code == 200
+
+    def test_starter_tier_can_access_signals(self, client: TestClient):
+        resp = client.post(
+            "/v1/keys", json={"name": "Starter", "email": "starter@test.com", "tier": "starter"}
+        )
+        key = resp.json()["key"]
+        resp = client.get("/v1/signals/netflix.com", headers={"X-API-Key": key})
+        assert resp.status_code == 200
+
+    def test_starter_tier_can_access_billing(self, client: TestClient):
+        resp = client.post(
+            "/v1/keys", json={"name": "Starter", "email": "starter2@test.com", "tier": "starter"}
+        )
+        key = resp.json()["key"]
+        resp = client.get("/v1/billing/netflix.com", headers={"X-API-Key": key})
+        assert resp.status_code == 200
+
+    def test_growth_tier_can_access_webhooks(self, client: TestClient):
+        resp = client.post(
+            "/v1/keys", json={"name": "Growth", "email": "growth@test.com", "tier": "growth"}
+        )
+        key = resp.json()["key"]
+        resp = client.get("/v1/webhooks", headers={"X-API-Key": key})
+        assert resp.status_code == 200
+
+    def test_free_tier_blocked_from_webhooks(self, client: TestClient, api_key: str):
+        resp = client.get("/v1/webhooks", headers={"X-API-Key": api_key})
+        assert resp.status_code == 403
+
+
+# ── API Key Management ───────────────────────────────────────────────
+
+
+class TestKeyManagement:
+    def test_get_my_key(self, client: TestClient, api_key: str):
+        resp = client.get("/v1/keys/me", headers={"X-API-Key": api_key})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["tier"] == "free"
+        assert data["is_active"] is True
+        assert "usage" in data
+        assert "top_endpoints" in data
+
+    def test_rotate_key(self, client: TestClient, api_key: str):
+        resp = client.post("/v1/keys/rotate", headers={"X-API-Key": api_key})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["new_key"].startswith("ck_")
+        assert data["tier"] == "free"
+        # Old key should no longer work
+        resp2 = client.get("/v1/cancel/netflix.com", headers={"X-API-Key": api_key})
+        assert resp2.status_code == 401
+        # New key should work
+        resp3 = client.get("/v1/cancel/netflix.com", headers={"X-API-Key": data["new_key"]})
+        assert resp3.status_code == 200
+
+    def test_revoke_key(self, client: TestClient):
+        resp = client.post(
+            "/v1/keys", json={"name": "Revoke Test", "email": "revoke@test.com"}
+        )
+        key = resp.json()["key"]
+        resp = client.delete("/v1/keys/revoke", headers={"X-API-Key": key})
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "revoked"
+        # Revoked key should not work
+        resp2 = client.get("/v1/cancel/netflix.com", headers={"X-API-Key": key})
+        assert resp2.status_code == 401
+
+    def test_upgrade_tier(self, client: TestClient, api_key: str):
+        resp = client.post(
+            "/v1/keys/upgrade?new_tier=starter", headers={"X-API-Key": api_key}
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["new_tier"] == "starter"
+        assert data["old_tier"] == "free"
+        assert data["daily_limit"] == 500
+
+    def test_cannot_downgrade(self, client: TestClient):
+        resp = client.post(
+            "/v1/keys", json={"name": "Growth", "email": "downgrade@test.com", "tier": "growth"}
+        )
+        key = resp.json()["key"]
+        resp = client.post(
+            "/v1/keys/upgrade?new_tier=starter", headers={"X-API-Key": key}
+        )
+        assert resp.status_code == 400
+        assert "cannot downgrade" in resp.json()["detail"].lower()
+
+    def test_invalid_tier(self, client: TestClient, api_key: str):
+        resp = client.post(
+            "/v1/keys/upgrade?new_tier=invalid", headers={"X-API-Key": api_key}
+        )
+        assert resp.status_code == 400

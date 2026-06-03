@@ -1,9 +1,9 @@
 from collections import defaultdict
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from app.auth import get_api_key, record_usage
+from app.auth import check_tier_gate, get_api_key, record_usage
 from app.database import get_db
 from app.models import ApiKey, ContactInfo, LifecyclePath, Service
 from app.routers.cancel import normalize_domain
@@ -161,10 +161,13 @@ def get_lifecycle_path(
 @router.get("/billing/{domain}", response_model=BillingResponse)
 def get_billing_info(
     domain: str,
+    request: Request = None,
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Billing model, trial policy, and refund policy for a service."""
+    """Billing model, trial policy, and refund policy for a service. Requires starter tier."""
+    if request:
+        check_tier_gate(request, api_key)
     domain = normalize_domain(domain)
     record_usage(db, api_key, "/v1/billing", domain)
 
@@ -211,10 +214,13 @@ def get_contact_info(
 @router.get("/signals/{domain}", response_model=SignalsResponse)
 def get_signals(
     domain: str,
+    request: Request = None,
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Churn intelligence: retention offers, difficulty signals, recommended actions."""
+    """Churn intelligence: retention offers, difficulty signals. Starter+ tier."""
+    if request:
+        check_tier_gate(request, api_key)
     domain = normalize_domain(domain)
     record_usage(db, api_key, "/v1/signals", domain)
 
