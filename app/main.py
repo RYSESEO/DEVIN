@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.routers import cancel, dashboard, monitoring, reports, service
+from app.routers import admin, cancel, dashboard, monitoring, reports, service
 from app.seed import seed_database
 
 # Structured logging
@@ -158,6 +158,7 @@ app.include_router(cancel.router)
 app.include_router(reports.router)
 app.include_router(dashboard.router)
 app.include_router(monitoring.router)
+app.include_router(admin.router)
 
 
 @app.get("/", include_in_schema=False)
@@ -177,6 +178,14 @@ async def dashboard_page():
     if dash_path.exists():
         return FileResponse(dash_path, media_type="text/html")
     return HTMLResponse("<h1>Dashboard coming soon</h1>")
+
+
+@app.get("/admin", include_in_schema=False)
+async def admin_dashboard_page():
+    admin_path = WEB_DIR / "admin.html"
+    if admin_path.exists():
+        return FileResponse(admin_path, media_type="text/html")
+    return HTMLResponse("<h1>Admin Dashboard coming soon</h1>")
 
 
 @app.get("/health")
