@@ -17,10 +17,17 @@ class Settings(BaseSettings):
         "Subscription Intelligence API — cancel, pause, downgrade, refund, billing,"
         " contact, and churn signals for any subscription service."
     )
-    api_version: str = "0.5.0"
+    api_version: str = "0.6.0"
     default_daily_limit: int = 100
     default_monthly_limit: int = 3000
     cors_origins: list[str] = ["*"]
+
+    # Database connection pooling (Postgres only; ignored for SQLite)
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+
+    # Environment identifier for security behavior
+    env: str = os.getenv("CANCELKIT_ENV", "development")
 
     model_config = {"env_prefix": "CANCELKIT_"}
 

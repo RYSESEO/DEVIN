@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
@@ -29,9 +30,23 @@ WEB_DIR = Path(__file__).parent.parent / "web"
 # Whether to start the background scheduler (disable in tests)
 ENABLE_SCHEDULER = os.getenv("CANCELKIT_SCHEDULER", "true").lower() in ("true", "1", "yes")
 
+# Track server start time for uptime reporting
+_START_TIME: float = 0.0
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global _START_TIME
+    _START_TIME = time.time()
+
+    # Warn if using default admin token in production
+    admin_token = os.getenv("CANCELKIT_ADMIN_TOKEN", "admin")
+    if admin_token == "admin" and os.getenv("CANCELKIT_ENV", "development") == "production":
+        logger.warning(
+            "SECURITY: Using default admin token in production. "
+            "Set CANCELKIT_ADMIN_TOKEN to a strong random value."
+        )
+
     # Run Alembic migrations if available; fall back to create_all for dev/testing
     try:
         from alembic.config import Config as AlembicConfig
@@ -83,6 +98,15 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
+    contact={"name": "CancelKit Support", "url": "https://cancelkit.dev"},
+    license_info={"name": "Proprietary"},
+    openapi_tags=[
+        {"name": "Subscription Intelligence", "description": "Core data endpoints"},
+        {"name": "Cancel", "description": "Backwards-compatible cancel paths"},
+        {"name": "Monitoring", "description": "Path freshness monitoring & webhooks"},
+        {"name": "Dashboard", "description": "Developer dashboard data"},
+        {"name": "Admin", "description": "Internal CRUD (token-gated)"},
+    ],
 )
 
 app.add_middleware(
@@ -100,13 +124,14 @@ app.add_middleware(
         "X-CancelKit-Event",
         "X-CancelKit-Signature",
         "X-Request-ID",
+        "X-API-Version",
     ],
 )
 
 
 @app.middleware("http")
 async def request_middleware(request: Request, call_next) -> Response:
-    """Add request ID, timing, and rate-limit headers to every response."""
+    """Add request ID, timing, security headers, and rate-limit headers."""
     request_id = str(uuid.uuid4())[:8]
     start = time.time()
 
@@ -120,7 +145,27 @@ async def request_middleware(request: Request, call_next) -> Response:
         )
 
     duration_ms = round((time.time() - start) * 1000, 1)
+
+    # Core identification headers
     response.headers["X-Request-ID"] = request_id
+    response.headers["X-API-Version"] = settings.api_version
+
+    # Security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = (
+        "camera=(), microphone=(), geolocation=()"
+    )
+    if os.getenv("CANCELKIT_ENV") == "production":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains; preload"
+        )
+
+    # Cache control for API responses
+    if request.url.path.startswith("/v1/"):
+        response.headers["Cache-Control"] = "no-store"
 
     # Rate-limit headers from auth middleware
     if hasattr(request.state, "rate_limit_daily"):
@@ -190,7 +235,21 @@ async def admin_dashboard_page():
 
 @app.get("/health")
 async def health_check():
-    result = {"status": "ok", "version": settings.api_version}
+    result = {
+        "status": "ok",
+        "version": settings.api_version,
+        "uptime_seconds": round(time.time() - _START_TIME, 1) if _START_TIME else 0,
+    }
+
+    # Database connectivity check
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        result["database"] = "connected"
+    except Exception as exc:
+        result["database"] = f"error: {exc}"
+        result["status"] = "degraded"
 
     if ENABLE_SCHEDULER:
         try:
@@ -201,6 +260,21 @@ async def health_check():
             result["scheduler"] = {"running": False, "error": "import_failed"}
 
     return result
+
+
+@app.get("/ready")
+async def readiness_check():
+    """Readiness probe for container orchestration — returns 200 only if DB is up."""
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        return {"ready": True}
+    except Exception as exc:
+        return JSONResponse(
+            status_code=503,
+            content={"ready": False, "error": str(exc)},
+        )
 
 
 if WEB_DIR.exists():

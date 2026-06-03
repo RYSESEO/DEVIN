@@ -2,6 +2,8 @@
 
 from fastapi.testclient import TestClient
 
+from app.config import settings
+
 # ── Health ───────────────────────────────────────────────────────────
 
 
@@ -11,7 +13,16 @@ class TestHealthCheck:
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "ok"
-        assert data["version"] == "0.4.0"
+        assert data["version"] == settings.api_version
+        assert "database" in data
+        assert data["database"] == "connected"
+        assert "uptime_seconds" in data
+
+    def test_readiness(self, client: TestClient):
+        resp = client.get("/ready")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ready"] is True
 
 
 # ── API Keys ─────────────────────────────────────────────────────────
@@ -645,3 +656,103 @@ class TestKeyManagement:
             "/v1/keys/upgrade?new_tier=invalid", headers={"X-API-Key": api_key}
         )
         assert resp.status_code == 400
+
+
+# ── Security & Production Headers ────────────────────────────────────
+
+
+class TestSecurityHeaders:
+    def test_security_headers_on_health(self, client: TestClient):
+        resp = client.get("/health")
+        assert resp.headers["X-Content-Type-Options"] == "nosniff"
+        assert resp.headers["X-Frame-Options"] == "DENY"
+        assert resp.headers["X-XSS-Protection"] == "1; mode=block"
+        assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+        assert "camera=()" in resp.headers["Permissions-Policy"]
+
+    def test_api_version_header(self, client: TestClient):
+        resp = client.get("/health")
+        assert resp.headers["X-API-Version"] == settings.api_version
+
+    def test_request_id_present(self, client: TestClient):
+        resp = client.get("/health")
+        assert "X-Request-ID" in resp.headers
+        assert len(resp.headers["X-Request-ID"]) == 8
+
+    def test_cache_control_on_api(self, client: TestClient, api_key: str):
+        resp = client.get("/v1/services", headers={"X-API-Key": api_key})
+        assert resp.headers.get("Cache-Control") == "no-store"
+
+    def test_no_hsts_in_dev(self, client: TestClient):
+        resp = client.get("/health")
+        assert "Strict-Transport-Security" not in resp.headers
+
+
+# ── Input Validation (Admin) ─────────────────────────────────────────
+
+
+class TestAdminInputValidation:
+    def test_create_service_invalid_domain(self, client: TestClient):
+        resp = client.post(
+            "/v1/admin/services",
+            params={"admin_token": "admin"},
+            json={
+                "domain": "not a domain",
+                "name": "Bad",
+                "category": "test",
+            },
+        )
+        assert resp.status_code == 422
+
+    def test_create_path_invalid_method(self, client: TestClient):
+        resp = client.post(
+            "/v1/admin/services/netflix.com/paths",
+            params={"admin_token": "admin"},
+            json={
+                "path_type": "cancel",
+                "method": "telepathy",
+                "steps": [{"action": "think"}],
+                "estimated_time_seconds": 60,
+                "difficulty": "easy",
+            },
+        )
+        assert resp.status_code == 422
+
+    def test_create_path_invalid_difficulty(self, client: TestClient):
+        resp = client.post(
+            "/v1/admin/services/netflix.com/paths",
+            params={"admin_token": "admin"},
+            json={
+                "path_type": "cancel",
+                "method": "web",
+                "steps": [{"action": "click"}],
+                "estimated_time_seconds": 60,
+                "difficulty": "impossible",
+            },
+        )
+        assert resp.status_code == 422
+
+    def test_create_path_empty_steps(self, client: TestClient):
+        resp = client.post(
+            "/v1/admin/services/netflix.com/paths",
+            params={"admin_token": "admin"},
+            json={
+                "path_type": "cancel",
+                "method": "web",
+                "steps": [],
+                "estimated_time_seconds": 60,
+                "difficulty": "easy",
+            },
+        )
+        assert resp.status_code == 422
+
+    def test_create_contact_invalid_channel(self, client: TestClient):
+        resp = client.post(
+            "/v1/admin/services/netflix.com/contacts",
+            params={"admin_token": "admin"},
+            json={
+                "channel": "telepathy",
+                "target": "psychic@example.com",
+            },
+        )
+        assert resp.status_code == 422

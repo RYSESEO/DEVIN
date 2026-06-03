@@ -45,37 +45,52 @@ def require_admin(token: str = Query(None, alias="admin_token")):
 
 
 class ServiceCreate(BaseModel):
-    domain: str = Field(..., min_length=1, max_length=255)
+    domain: str = Field(
+        ..., min_length=3, max_length=255,
+        pattern=r"^[a-zA-Z0-9]([a-zA-Z0-9\-]*\.)+[a-zA-Z]{2,}$",
+    )
     name: str = Field(..., min_length=1, max_length=255)
     category: str = Field(..., min_length=1, max_length=100)
     logo_url: str | None = None
-    billing_model: str | None = None
+    billing_model: str | None = Field(
+        default=None,
+        pattern=r"^(auto_renew|manual_renew|prepaid|contract)$",
+    )
     trial_policy: dict | None = None
     refund_policy: dict | None = None
     legal_flags: list[str] | None = None
 
 
 class ServiceUpdate(BaseModel):
-    name: str | None = None
-    category: str | None = None
+    name: str | None = Field(default=None, max_length=255)
+    category: str | None = Field(default=None, max_length=100)
     logo_url: str | None = None
-    billing_model: str | None = None
+    billing_model: str | None = Field(
+        default=None,
+        pattern=r"^(auto_renew|manual_renew|prepaid|contract)$",
+    )
     trial_policy: dict | None = None
     refund_policy: dict | None = None
     legal_flags: list[str] | None = None
 
 
 class PathCreate(BaseModel):
-    path_type: str = Field(default="cancel")
-    method: str = Field(...)
-    steps: list[dict] = Field(...)
-    estimated_time_seconds: int = Field(..., ge=10)
-    difficulty: str = Field(...)
+    path_type: str = Field(
+        default="cancel",
+        pattern=r"^(cancel|pause|downgrade|refund|account_delete)$",
+    )
+    method: str = Field(
+        ...,
+        pattern=r"^(web|phone|email|chat|app|mail|in_person)$",
+    )
+    steps: list[dict] = Field(..., min_length=1)
+    estimated_time_seconds: int = Field(..., ge=10, le=7200)
+    difficulty: str = Field(..., pattern=r"^(easy|medium|hard)$")
     confidence: float = Field(default=0.9, ge=0.0, le=1.0)
     complexity_score: int | None = None
     retention_offers: list[dict] | None = None
     legal_flags: list[str] | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class PathUpdate(BaseModel):
@@ -92,12 +107,15 @@ class PathUpdate(BaseModel):
 
 
 class ContactCreate(BaseModel):
-    channel: str = Field(...)
-    target: str = Field(...)
-    hours: str | None = None
-    expected_hold_minutes: int | None = None
+    channel: str = Field(
+        ...,
+        pattern=r"^(phone|email|chat|web|app|social|mail)$",
+    )
+    target: str = Field(..., min_length=1, max_length=500)
+    hours: str | None = Field(default=None, max_length=200)
+    expected_hold_minutes: int | None = Field(default=None, ge=0, le=300)
     auth_required: bool = False
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=1000)
 
 
 class ContactUpdate(BaseModel):
