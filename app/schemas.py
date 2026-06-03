@@ -45,7 +45,7 @@ class LifecyclePathResponse(BaseModel):
     difficulty: str
     confidence: float
     complexity_score: int | None
-    retention_offers: list[dict] | None
+    retention_offers: list[dict | str] | None
     legal_flags: list[str] | None
     notes: str | None
     last_verified_at: datetime
@@ -62,7 +62,7 @@ class CancellationPathResponse(BaseModel):
     difficulty: str
     confidence: float
     complexity_score: int | None = None
-    retention_offers: list[dict] | None = None
+    retention_offers: list[dict | str] | None = None
     notes: str | None
     last_verified_at: datetime
 

@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.routers import cancel, reports, service
+from app.routers import cancel, dashboard, reports, service
 from app.seed import seed_database
 
 logging.basicConfig(level=logging.INFO)
@@ -50,6 +50,7 @@ app.add_middleware(
 app.include_router(service.router)
 app.include_router(cancel.router)
 app.include_router(reports.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/", include_in_schema=False)
@@ -61,6 +62,14 @@ async def landing_page():
         "<h1>CancelKit API</h1>"
         "<p>Visit <a href='/docs'>/docs</a> for API docs.</p>"
     )
+
+
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard_page():
+    dash_path = WEB_DIR / "dashboard.html"
+    if dash_path.exists():
+        return FileResponse(dash_path, media_type="text/html")
+    return HTMLResponse("<h1>Dashboard coming soon</h1>")
 
 
 @app.get("/health")
