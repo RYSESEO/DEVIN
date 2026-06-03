@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CancelKit — Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #050505;
+            --bg-card: rgba(255,255,255,0.03);
+            --bg-card-hover: rgba(255,255,255,0.06);
+            --bg-elevated: rgba(255,255,255,0.05);
+            --bg-input: rgba(255,255,255,0.06);
+            --border-subtle: rgba(255,255,255,0.08);
+            --border-hover: rgba(255,255,255,0.15);
+            --text-primary: #f0f0f0;
+            --text-secondary: rgba(255,255,255,0.55);
+            --text-muted: rgba(255,255,255,0.35);
+            --accent: #10B981;
+            --accent-dim: rgba(16,185,129,0.15);
+            --accent-glow: rgba(16,185,129,0.3);
+            --danger: #EF4444;
+            --danger-dim: rgba(239,68,68,0.15);
+            --warning: #F59E0B;
+            --warning-dim: rgba(245,158,11,0.15);
+            --info: #3B82F6;
+            --info-dim: rgba(59,130,246,0.15);
+            --radius-xl: 1.25rem;
+            --radius-lg: 1rem;
+            --radius-md: 0.625rem;
+            --radius-sm: 0.375rem;
+            --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        html { font-size: 15px; scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100dvh;
+            display: flex;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Sidebar ─────────────────────────────────── */
+        .sidebar {
+            width: 220px;
+            min-height: 100dvh;
+            background: rgba(255,255,255,0.02);
+            border-right: 1px solid var(--border-subtle);
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 0 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 0.75rem;
+        }
+
+        .sidebar-logo h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .sidebar-logo h1 span { color: var(--accent); }
+
+        .sidebar-logo p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .nav-section {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .nav-section-label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            padding: 0 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .nav-item i { font-size: 1rem; opacity: 0.8; }
+
+        /* ── Main content ────────────────────────────── */
+        .main {
+            margin-left: 220px;
+            flex: 1;
+            padding: 2rem 2.5rem;
+            max-width: 1200px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.75rem;
+        }
+
+        .page-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .page-header .subtitle {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        /* ── Auth gate ───────────────────────────────── */
+        .auth-gate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100dvh;
+            width: 100%;
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem;
+            width: 380px;
+            text-align: center;
+        }
+
+        .auth-card h2 { margin-bottom: 0.5rem; font-size: 1.3rem; }
+        .auth-card p { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+        /* ── Cards ────────────────────────────────────── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .card:hover { border-color: var(--border-hover); }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.125rem;
+        }
+
+        .stat-card .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 600;
+        }
+
+        .stat-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin-top: 0.3rem;
+            font-family: var(--font-mono);
+        }
+
+        .stat-card .sub {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 0.15rem;
+        }
+
+        /* ── Tables ───────────────────────────────────── */
+        .table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .table-toolbar h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.625rem 1rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(255,255,255,0.015);
+        }
+
+        td {
+            padding: 0.625rem 1rem;
+            font-size: 0.82rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+        }
+
+        tr:hover td { color: var(--text-primary); background: rgba(255,255,255,0.02); }
+
+        /* ── Badges ───────────────────────────────────── */
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 100px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-free { background: var(--bg-elevated); color: var(--text-secondary); }
+        .badge-starter { background: var(--info-dim); color: var(--info); }
+        .badge-growth { background: var(--accent-dim); color: var(--accent); }
+        .badge-enterprise { background: var(--warning-dim); color: var(--warning); }
+        .badge-easy { background: var(--accent-dim); color: var(--accent); }
+        .badge-medium { background: var(--warning-dim); color: var(--warning); }
+        .badge-hard { background: var(--danger-dim); color: var(--danger); }
+        .badge-pending { background: var(--warning-dim); color: var(--warning); }
+        .badge-investigating { background: var(--info-dim); color: var(--info); }
+        .badge-resolved { background: var(--accent-dim); color: var(--accent); }
+        .badge-dismissed { background: var(--bg-elevated); color: var(--text-muted); }
+        .badge-active { background: var(--accent-dim); color: var(--accent); }
+        .badge-inactive { background: var(--danger-dim); color: var(--danger); }
+
+        /* ── Buttons ──────────────────────────────────── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: var(--font-sans);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+        }
+        .btn-primary:hover { background: #0fd98f; }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+        .btn-ghost:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+        .btn-danger {
+            background: var(--danger-dim);
+            color: var(--danger);
+        }
+        .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+        .btn-sm {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.7rem;
+        }
+
+        /* ── Forms ────────────────────────────────────── */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            font-family: var(--font-sans);
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .form-input:focus { border-color: var(--accent); }
+
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2rem;
+        }
+
+        textarea.form-input { resize: vertical; min-height: 80px; }
+
+        /* ── Modals ───────────────────────────────────── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: #0a0a0a;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 1.75rem;
+            width: 560px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        /* ── Search bar ──────────────────────────────── */
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 0 0.75rem;
+        }
+
+        .search-bar i { color: var(--text-muted); font-size: 0.9rem; }
+
+        .search-bar input {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            padding: 0.45rem 0;
+            outline: none;
+            width: 200px;
+            font-family: var(--font-sans);
+        }
+
+        /* ── Toast ────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: #111;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1.25rem;
+            font-size: 0.82rem;
+            z-index: 2000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { border-left: 3px solid var(--accent); }
+        .toast.error { border-left: 3px solid var(--danger); }
+
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ── Detail panel ─────────────────────────────── */
+        .detail-panel {
+            display: none;
+        }
+
+        .detail-panel.active { display: block; }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-header .back-btn {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+        }
+
+        .detail-header .back-btn:hover { color: var(--text-primary); }
+
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section h4 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .path-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .path-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .path-card-header .type {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: capitalize;
+        }
+
+        .path-card-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .path-card-actions {
+            display: flex;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+
+        .step-list {
+            list-style: none;
+            counter-reset: step;
+        }
+
+        .step-list li {
+            counter-increment: step;
+            padding: 0.4rem 0;
+            padding-left: 1.75rem;
+            position: relative;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .step-list li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            width: 1.25rem;
+            height: 1.25rem;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 0.4rem;
+        }
+
+        .confidence-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            width: 60px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 0.3rem;
+        }
+
+        .confidence-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .hidden { display: none !important; }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+    </style>
+</head>
+<body>
+
+<!-- Auth gate -->
+<div id="authGate" class="auth-gate">
+    <div class="auth-card">
+        <h2>Admin Access</h2>
+        <p>Enter your admin token to continue.</p>
+        <div class="form-group">
+            <input type="password" id="tokenInput" class="form-input" placeholder="Admin token" style="text-align:center" />
+        </div>
+        <button class="btn btn-primary" onclick="authenticate()" style="width:100%;justify-content:center;margin-top:0.5rem">
+            <i class="ri-lock-unlock-line"></i> Authenticate
+        </button>
+        <p id="authError" style="color:var(--danger);font-size:0.78rem;margin-top:0.75rem;display:none">Invalid token. Try again.</p>
+    </div>
+</div>
+
+<!-- App shell -->
+<div id="appShell" class="hidden" style="display:flex;width:100%">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h1>Cancel<span>Kit</span></h1>
+            <p>Admin Panel</p>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Overview</div>
+            <div class="nav-item active" data-view="overview">
+                <i class="ri-dashboard-3-line"></i> Dashboard
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Data</div>
+            <div class="nav-item" data-view="services">
+                <i class="ri-database-2-line"></i> Services
+            </div>
+            <div class="nav-item" data-view="reports">
+                <i class="ri-flag-line"></i> Reports
+            </div>
+            <div class="nav-item" data-view="stale">
+                <i class="ri-error-warning-line"></i> Stale Flags
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-label">Platform</div>
+            <div class="nav-item" data-view="keys">
+                <i class="ri-key-2-line"></i> API Keys
+            </div>
+            <div class="nav-item" data-view="webhooks">
+                <i class="ri-webhook-line"></i> Webhooks
+            </div>
+        </div>
+
+        <div style="flex:1"></div>
+        <div class="nav-section">
+            <a class="nav-item" href="/dashboard">
+                <i class="ri-arrow-left-line"></i> Public Dashboard
+            </a>
+            <a class="nav-item" href="/docs">
+                <i class="ri-book-open-line"></i> API Docs
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <!-- Overview -->
+        <div id="view-overview" class="view active">
+            <div class="page-header">
+                <div>
+                    <h2>Platform Overview</h2>
+                    <div class="subtitle">Real-time system health and metrics</div>
+                </div>
+                <div style="display:flex;gap:0.5rem">
+                    <button class="btn btn-ghost" onclick="loadOverview()"><i class="ri-refresh-line"></i> Refresh</button>
+                    <button class="btn btn-primary" onclick="showAddServiceModal()"><i class="ri-add-line"></i> Add Service</button>
+                </div>
+            </div>
+            <div class="stat-grid" id="overviewStats"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="card">
+                    <h4 style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">Categories</h4>
+                    <div id="categoryList"></div>
+                </div>
+                <div class="card">
+                    <h4 style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">Key Tiers</h4>
+                    <div id="tierList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services list -->
+        <div id="view-services" class="view hidden">
+            <div class="page-header">
+                <div>
+                    <h2>Services</h2>
+                    <div class="subtitle" id="servicesCount">Loading...</div>
+                </div>
+                <div style="display:flex;gap:0.5rem">
+                    <button class="btn btn-primary" onclick="showAddServiceModal()"><i class="ri-add-line"></i> Add Service</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-toolbar">
+                    <div class="search-bar">
+                        <i class="ri-search-line"></i>
+                        <input type="text" id="serviceSearch" placeholder="Search services..." oninput="debounceSearch()" />
+                    </div>
+                    <select class="form-input" id="categoryFilter" onchange="loadServices()" style="width:160px;padding:0.4rem 0.75rem;font-size:0.78rem">
+                        <option value="">All categories</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Category</th>
+                            <th>Billing</th>
+                            <th>Paths</th>
+                            <th>Contacts</th>
+                            <th>Flags</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="servicesTable"></tbody>
+                </table>
+            </div>
+            <div id="servicesPagination" style="display:flex;justify-content:center;gap:0.5rem;margin-top:1rem"></div>
+        </div>
+
+        <!-- Service detail -->
+        <div id="view-service-detail" class="view hidden">
+            <div id="serviceDetailContent"></div>
+        </div>
+
+        <!-- Reports -->
+        <div id="view-reports" class="view hidden">
+            <div class="page-header">
+                <div>
+                    <h2>Reports</h2>
+                    <div class="subtitle" id="reportsCount">Loading...</div>
+                </div>
+                <select class="form-input" id="reportStatusFilter" onchange="loadReports()" style="width:160px;padding:0.4rem 0.75rem;font-size:0.78rem">
+                    <option value="">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="investigating">Investigating</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="dismissed">Dismissed</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Domain</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Stale flags -->
+        <div id="view-stale" class="view hidden">
+            <div class="page-header">
+                <div>
+                    <h2>Stale Flags</h2>
+                    <div class="subtitle" id="staleCount">Loading...</div>
+                </div>
+                <div style="display:flex;gap:0.5rem">
+                    <button class="btn btn-ghost" onclick="loadStaleFlags()"><i class="ri-refresh-line"></i> Refresh</button>
+                    <button class="btn btn-primary" onclick="bulkResolveFlags()"><i class="ri-check-double-line"></i> Resolve All</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Path</th>
+                            <th>Reason</th>
+                            <th>Severity</th>
+                            <th>Flagged</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="staleTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- API Keys -->
+        <div id="view-keys" class="view hidden">
+            <div class="page-header">
+                <div>
+                    <h2>API Keys</h2>
+                    <div class="subtitle" id="keysCount">Loading...</div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Tier</th>
+                            <th>Usage</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="keysTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Webhooks -->
+        <div id="view-webhooks" class="view hidden">
+            <div class="page-header">
+                <div>
+                    <h2>Webhooks</h2>
+                    <div class="subtitle" id="webhooksCount">Loading...</div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th>Events</th>
+                            <th>Key ID</th>
+                            <th>Deliveries</th>
+                            <th>Failed</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="webhooksTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Service Modal -->
+<div class="modal-overlay" id="addServiceModal">
+    <div class="modal">
+        <h3>Add New Service</h3>
+        <div class="form-group">
+            <label>Domain</label>
+            <input type="text" class="form-input" id="newDomain" placeholder="example.com" />
+        </div>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" class="form-input" id="newName" placeholder="Example Service" />
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <input type="text" class="form-input" id="newCategory" placeholder="streaming" />
+        </div>
+        <div class="form-group">
+            <label>Billing Model</label>
+            <select class="form-input" id="newBillingModel">
+                <option value="auto_renew">Auto Renew</option>
+                <option value="manual_renew">Manual Renew</option>
+                <option value="prepaid">Prepaid</option>
+                <option value="contract">Contract</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeModal('addServiceModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="createService()"><i class="ri-add-line"></i> Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Path Modal -->
+<div class="modal-overlay" id="addPathModal">
+    <div class="modal">
+        <h3>Add Lifecycle Path</h3>
+        <input type="hidden" id="pathDomain" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="form-group">
+                <label>Path Type</label>
+                <select class="form-input" id="newPathType">
+                    <option value="cancel">Cancel</option>
+                    <option value="pause">Pause</option>
+                    <option value="downgrade">Downgrade</option>
+                    <option value="refund">Refund</option>
+                    <option value="account_delete">Account Delete</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Method</label>
+                <select class="form-input" id="newPathMethod">
+                    <option value="web">Web</option>
+                    <option value="phone">Phone</option>
+                    <option value="email">Email</option>
+                    <option value="chat">Chat</option>
+                    <option value="app">App</option>
+                    <option value="in_person">In Person</option>
+                </select>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="form-group">
+                <label>Difficulty</label>
+                <select class="form-input" id="newPathDifficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Est. Time (seconds)</label>
+                <input type="number" class="form-input" id="newPathTime" value="120" min="10" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Steps (JSON array)</label>
+            <textarea class="form-input" id="newPathSteps" style="font-family:var(--font-mono);font-size:0.75rem" rows="6">[{"action": "navigate", "target": "https://example.com/cancel", "description": "Go to cancel page"}]</textarea>
+        </div>
+        <div class="form-group">
+            <label>Notes</label>
+            <input type="text" class="form-input" id="newPathNotes" placeholder="Optional notes" />
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeModal('addPathModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="createPath()"><i class="ri-add-line"></i> Add Path</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Contact Modal -->
+<div class="modal-overlay" id="addContactModal">
+    <div class="modal">
+        <h3>Add Contact</h3>
+        <input type="hidden" id="contactDomain" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="form-group">
+                <label>Channel</label>
+                <select class="form-input" id="newContactChannel">
+                    <option value="web">Web</option>
+                    <option value="phone">Phone</option>
+                    <option value="email">Email</option>
+                    <option value="chat">Chat</option>
+                    <option value="app">App</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Target</label>
+                <input type="text" class="form-input" id="newContactTarget" placeholder="1-800-123-4567" />
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+            <div class="form-group">
+                <label>Hours</label>
+                <input type="text" class="form-input" id="newContactHours" placeholder="24/7" />
+            </div>
+            <div class="form-group">
+                <label>Hold Minutes</label>
+                <input type="number" class="form-input" id="newContactHold" placeholder="15" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Notes</label>
+            <input type="text" class="form-input" id="newContactNotes" placeholder="Optional notes" />
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeModal('addContactModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="createContact()"><i class="ri-add-line"></i> Add Contact</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+let adminToken = '';
+let currentServicePage = 1;
+let searchTimeout = null;
+
+const API = '/v1/admin';
+
+function q(params) {
+    const p = new URLSearchParams({admin_token: adminToken, ...params});
+    return '?' + p.toString();
+}
+
+// ── Auth ──────────────────────────────────────────────────
+
+function authenticate() {
+    adminToken = document.getElementById('tokenInput').value;
+    fetch(API + '/overview' + q({}))
+        .then(r => {
+            if (!r.ok) throw new Error('auth');
+            return r.json();
+        })
+        .then(() => {
+            document.getElementById('authGate').classList.add('hidden');
+            const shell = document.getElementById('appShell');
+            shell.classList.remove('hidden');
+            shell.style.display = 'flex';
+            initApp();
+        })
+        .catch(() => {
+            document.getElementById('authError').style.display = 'block';
+        });
+}
+
+document.getElementById('tokenInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') authenticate();
+});
+
+// ── Navigation ────────────────────────────────────────────
+
+document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+    item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        const view = item.dataset.view;
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        const target = document.getElementById('view-' + view);
+        if (target) { target.classList.remove('hidden'); }
+        loadView(view);
+    });
+});
+
+function loadView(view) {
+    switch(view) {
+        case 'overview': loadOverview(); break;
+        case 'services': loadServices(); break;
+        case 'reports': loadReports(); break;
+        case 'stale': loadStaleFlags(); break;
+        case 'keys': loadKeys(); break;
+        case 'webhooks': loadWebhooks(); break;
+    }
+}
+
+function initApp() {
+    loadOverview();
+    loadCategoryOptions();
+}
+
+// ── Overview ──────────────────────────────────────────────
+
+function loadOverview() {
+    fetch(API + '/overview' + q({})).then(r => r.json()).then(data => {
+        const t = data.totals;
+        const m = data.monitoring;
+        document.getElementById('overviewStats').innerHTML = `
+            <div class="stat-card">
+                <div class="label">Services</div>
+                <div class="value">${t.services}</div>
+                <div class="sub">${Object.keys(data.categories).length} categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Lifecycle Paths</div>
+                <div class="value">${t.lifecycle_paths}</div>
+                <div class="sub">${t.contacts} contacts</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">API Keys</div>
+                <div class="value">${t.active_keys}</div>
+                <div class="sub">${t.total_api_calls.toLocaleString()} total calls</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Reports</div>
+                <div class="value">${t.reports}</div>
+                <div class="sub">${t.pending_reports} pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Monitor Checks</div>
+                <div class="value">${m.total_checks}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Stale Flags</div>
+                <div class="value" style="color:${m.open_stale_flags > 0 ? 'var(--warning)' : 'var(--accent)'}">${m.open_stale_flags}</div>
+                <div class="sub">open</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Avg Confidence</div>
+                <div class="value">${m.avg_confidence ? (m.avg_confidence * 100).toFixed(1) + '%' : 'N/A'}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Webhooks</div>
+                <div class="value">${m.active_webhooks}</div>
+                <div class="sub">active</div>
+            </div>
+        `;
+
+        const cats = Object.entries(data.categories).sort((a,b) => b[1] - a[1]);
+        document.getElementById('categoryList').innerHTML = cats.map(([cat, count]) =>
+            `<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--border-subtle);font-size:0.82rem">
+                <span style="text-transform:capitalize">${cat}</span>
+                <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:0.75rem">${count}</span>
+            </div>`
+        ).join('');
+
+        const tiers = Object.entries(data.key_tiers || {});
+        document.getElementById('tierList').innerHTML = tiers.length ? tiers.map(([tier, count]) =>
+            `<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--border-subtle);font-size:0.82rem">
+                <span class="badge badge-${tier}">${tier}</span>
+                <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:0.75rem">${count}</span>
+            </div>`
+        ).join('') : '<div class="empty-state" style="padding:1rem"><i class="ri-key-2-line"></i>No active keys</div>';
+    });
+}
+
+// ── Services ──────────────────────────────────────────────
+
+function loadCategoryOptions() {
+    fetch(API + '/overview' + q({})).then(r => r.json()).then(data => {
+        const sel = document.getElementById('categoryFilter');
+        const cats = Object.keys(data.categories).sort();
+        cats.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+            sel.appendChild(opt);
+        });
+    });
+}
+
+function debounceSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => { currentServicePage = 1; loadServices(); }, 300);
+}
+
+function loadServices(page) {
+    if (page) currentServicePage = page;
+    const search = document.getElementById('serviceSearch').value;
+    const category = document.getElementById('categoryFilter').value;
+    const params = {page: currentServicePage, per_page: 30};
+    if (search) params.search = search;
+    if (category) params.category = category;
+
+    fetch(API + '/services' + q(params)).then(r => r.json()).then(data => {
+        document.getElementById('servicesCount').textContent = `${data.total} services`;
+        const tbody = document.getElementById('servicesTable');
+        if (!data.services.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ri-database-2-line"></i>No services found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.services.map(s => `
+            <tr style="cursor:pointer" onclick="viewService('${s.domain}')">
+                <td>
+                    <div style="font-weight:600;color:var(--text-primary)">${s.name}</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);font-family:var(--font-mono)">${s.domain}</div>
+                </td>
+                <td style="text-transform:capitalize">${s.category}</td>
+                <td style="font-size:0.75rem">${s.billing_model || '—'}</td>
+                <td><span style="font-family:var(--font-mono)">${s.path_count}</span></td>
+                <td><span style="font-family:var(--font-mono)">${s.contact_count}</span></td>
+                <td>${(s.legal_flags || []).length ? '<span class="badge badge-pending">' + s.legal_flags.length + '</span>' : '—'}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteService('${s.domain}')">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        const totalPages = Math.ceil(data.total / 30);
+        const pag = document.getElementById('servicesPagination');
+        if (totalPages > 1) {
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="btn ${i === currentServicePage ? 'btn-primary' : 'btn-ghost'} btn-sm" onclick="loadServices(${i})">${i}</button>`;
+            }
+            pag.innerHTML = html;
+        } else {
+            pag.innerHTML = '';
+        }
+    });
+}
+
+function viewService(domain) {
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    document.getElementById('view-service-detail').classList.remove('hidden');
+
+    fetch(API + '/services/' + domain + q({})).then(r => r.json()).then(svc => {
+        const container = document.getElementById('serviceDetailContent');
+        const pathsHtml = svc.paths.map(p => `
+            <div class="path-card">
+                <div class="path-card-header">
+                    <span class="type">${p.path_type}</span>
+                    <span class="badge badge-${p.difficulty}">${p.difficulty}</span>
+                    <span class="badge badge-free">${p.method}</span>
+                </div>
+                <div class="path-card-meta">
+                    <span><i class="ri-time-line"></i> ${Math.round(p.estimated_time_seconds / 60)}m</span>
+                    <span>Confidence: ${(p.confidence * 100).toFixed(0)}%
+                        <span class="confidence-bar"><span class="confidence-bar-fill" style="width:${p.confidence * 100}%;background:${p.confidence > 0.7 ? 'var(--accent)' : p.confidence > 0.5 ? 'var(--warning)' : 'var(--danger)'}"></span></span>
+                    </span>
+                    ${p.complexity_score ? '<span>Complexity: ' + p.complexity_score + '</span>' : ''}
+                    ${p.last_verified_at ? '<span>Verified: ' + new Date(p.last_verified_at).toLocaleDateString() + '</span>' : ''}
+                </div>
+                <ol class="step-list">
+                    ${p.steps.map(s => `<li><strong>${s.action || ''}</strong> ${s.description || ''} ${s.target ? '<span style="color:var(--accent);font-family:var(--font-mono);font-size:0.7rem">' + s.target + '</span>' : ''}</li>`).join('')}
+                </ol>
+                ${p.notes ? '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;font-style:italic">' + p.notes + '</div>' : ''}
+                <div class="path-card-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="verifyPath(${p.id})"><i class="ri-check-line"></i> Verify</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePath(${p.id}, '${domain}')"><i class="ri-delete-bin-line"></i> Delete</button>
+                </div>
+            </div>
+        `).join('');
+
+        const contactsHtml = svc.contacts.map(c => `
+            <tr>
+                <td>${c.channel}</td>
+                <td style="font-family:var(--font-mono);font-size:0.78rem">${c.target}</td>
+                <td>${c.hours || '—'}</td>
+                <td>${c.expected_hold_minutes ? c.expected_hold_minutes + 'm' : '—'}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteContact(${c.id}, '${domain}')"><i class="ri-delete-bin-line"></i></button>
+                </td>
+            </tr>
+        `).join('');
+
+        const flagsHtml = svc.stale_flags.map(f => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border-subtle)">
+                <div>
+                    <span class="badge badge-${f.severity === 'critical' ? 'hard' : 'medium'}">${f.severity}</span>
+                    <span style="font-size:0.82rem;margin-left:0.5rem">${f.reason}</span>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="resolveFlag(${f.id})"><i class="ri-check-line"></i> Resolve</button>
+            </div>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="detail-header">
+                <i class="ri-arrow-left-line detail-header .back-btn" style="cursor:pointer;font-size:1.25rem;color:var(--text-muted)" onclick="backToServices()"></i>
+                <div>
+                    <h2>${svc.name}</h2>
+                    <div class="subtitle" style="font-family:var(--font-mono)">${svc.domain}</div>
+                </div>
+                <div style="margin-left:auto;display:flex;gap:0.5rem">
+                    <button class="btn btn-ghost" onclick="showAddPathModal('${svc.domain}')"><i class="ri-add-line"></i> Add Path</button>
+                    <button class="btn btn-ghost" onclick="showAddContactModal('${svc.domain}')"><i class="ri-contacts-line"></i> Add Contact</button>
+                    <button class="btn btn-danger" onclick="deleteService('${svc.domain}')"><i class="ri-delete-bin-line"></i> Delete</button>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.5rem">
+                <div class="stat-card">
+                    <div class="label">Category</div>
+                    <div style="font-size:1rem;font-weight:600;text-transform:capitalize;margin-top:0.2rem">${svc.category}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Billing</div>
+                    <div style="font-size:1rem;font-weight:600;margin-top:0.2rem">${svc.billing_model || '—'}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Paths</div>
+                    <div style="font-size:1.5rem;font-weight:700;font-family:var(--font-mono);margin-top:0.2rem">${svc.paths.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Contacts</div>
+                    <div style="font-size:1.5rem;font-weight:700;font-family:var(--font-mono);margin-top:0.2rem">${svc.contacts.length}</div>
+                </div>
+            </div>
+
+            ${svc.stale_flags.length ? '<div class="detail-section"><h4>Active Stale Flags</h4>' + flagsHtml + '</div>' : ''}
+
+            <div class="detail-section">
+                <h4>Lifecycle Paths (${svc.paths.length})</h4>
+                ${pathsHtml || '<div class="empty-state"><i class="ri-route-line"></i>No paths defined</div>'}
+            </div>
+
+            <div class="detail-section">
+                <h4>Contacts (${svc.contacts.length})</h4>
+                ${svc.contacts.length ? `
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Channel</th><th>Target</th><th>Hours</th><th>Hold</th><th></th></tr></thead>
+                        <tbody>${contactsHtml}</tbody>
+                    </table>
+                </div>` : '<div class="empty-state"><i class="ri-contacts-line"></i>No contacts</div>'}
+            </div>
+
+            ${svc.legal_flags && svc.legal_flags.length ? `
+            <div class="detail-section">
+                <h4>Legal Flags</h4>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    ${svc.legal_flags.map(f => '<span class="badge badge-pending">' + f + '</span>').join('')}
+                </div>
+            </div>` : ''}
+        `;
+    });
+}
+
+function backToServices() {
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    document.getElementById('view-services').classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector('.nav-item[data-view="services"]').classList.add('active');
+    loadServices();
+}
+
+// ── Reports ───────────────────────────────────────────────
+
+function loadReports() {
+    const status = document.getElementById('reportStatusFilter').value;
+    const params = {per_page: 100};
+    if (status) params.status = status;
+
+    fetch(API + '/reports' + q(params)).then(r => r.json()).then(data => {
+        document.getElementById('reportsCount').textContent = `${data.total} reports`;
+        const tbody = document.getElementById('reportsTable');
+        if (!data.reports.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ri-flag-line"></i>No reports</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.reports.map(r => `
+            <tr>
+                <td style="font-family:var(--font-mono);font-size:0.75rem">#${r.id}</td>
+                <td style="font-family:var(--font-mono);font-size:0.78rem">${r.service_domain}</td>
+                <td>${r.report_type}</td>
+                <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.description}</td>
+                <td><span class="badge badge-${r.status}">${r.status}</span></td>
+                <td style="font-size:0.75rem">${r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</td>
+                <td>
+                    <select class="form-input" style="width:120px;padding:0.25rem 0.5rem;font-size:0.72rem" onchange="updateReportStatus(${r.id}, this.value)">
+                        <option value="pending" ${r.status === 'pending' ? 'selected' : ''}>Pending</option>
+                        <option value="investigating" ${r.status === 'investigating' ? 'selected' : ''}>Investigating</option>
+                        <option value="resolved" ${r.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                        <option value="dismissed" ${r.status === 'dismissed' ? 'selected' : ''}>Dismissed</option>
+                    </select>
+                </td>
+            </tr>
+        `).join('');
+    });
+}
+
+function updateReportStatus(id, status) {
+    fetch(API + '/reports/' + id + q({}), {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status})
+    }).then(r => r.json()).then(() => {
+        showToast('Report updated', 'success');
+        loadReports();
+    });
+}
+
+// ── Stale Flags ───────────────────────────────────────────
+
+function loadStaleFlags() {
+    fetch(API + '/stale-flags' + q({resolved: false})).then(r => r.json()).then(data => {
+        document.getElementById('staleCount').textContent = `${data.total} open flags`;
+        const tbody = document.getElementById('staleTable');
+        if (!data.flags.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="ri-check-double-line"></i>No open stale flags</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.flags.map(f => `
+            <tr>
+                <td>
+                    <div style="font-weight:600;color:var(--text-primary)">${f.service_name || '—'}</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);font-family:var(--font-mono)">${f.domain || ''}</div>
+                </td>
+                <td style="text-transform:capitalize">${f.path_type}</td>
+                <td style="font-size:0.78rem">${f.reason}</td>
+                <td><span class="badge badge-${f.severity === 'critical' ? 'hard' : 'medium'}">${f.severity}</span></td>
+                <td style="font-size:0.75rem">${f.created_at ? new Date(f.created_at).toLocaleDateString() : '—'}</td>
+                <td>
+                    <button class="btn btn-ghost btn-sm" onclick="resolveFlag(${f.id})"><i class="ri-check-line"></i> Resolve</button>
+                </td>
+            </tr>
+        `).join('');
+    });
+}
+
+function resolveFlag(id) {
+    fetch(API + '/stale-flags/' + id + '/resolve' + q({}), {method: 'POST'}).then(r => r.json()).then(() => {
+        showToast('Flag resolved', 'success');
+        loadStaleFlags();
+    });
+}
+
+function bulkResolveFlags() {
+    fetch(API + '/bulk/resolve-all-flags' + q({}), {method: 'POST'}).then(r => r.json()).then(data => {
+        showToast(`${data.flags_resolved} flags resolved`, 'success');
+        loadStaleFlags();
+    });
+}
+
+// ── API Keys ──────────────────────────────────────────────
+
+function loadKeys() {
+    fetch(API + '/keys' + q({active_only: false, per_page: 100})).then(r => r.json()).then(data => {
+        document.getElementById('keysCount').textContent = `${data.total} keys`;
+        const tbody = document.getElementById('keysTable');
+        if (!data.keys.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ri-key-2-line"></i>No API keys</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.keys.map(k => `
+            <tr>
+                <td style="font-family:var(--font-mono);font-size:0.75rem">${k.key_prefix}</td>
+                <td>${k.name}</td>
+                <td style="font-size:0.78rem">${k.email}</td>
+                <td><span class="badge badge-${k.tier}">${k.tier}</span></td>
+                <td style="font-family:var(--font-mono)">${k.total_usage.toLocaleString()}</td>
+                <td><span class="badge badge-${k.is_active ? 'active' : 'inactive'}">${k.is_active ? 'Active' : 'Inactive'}</span></td>
+                <td>
+                    ${k.is_active ? `
+                        <select class="form-input" style="width:100px;padding:0.2rem 0.4rem;font-size:0.7rem" onchange="changeTier(${k.id}, this.value)">
+                            <option value="" disabled selected>Tier</option>
+                            <option value="free">Free</option>
+                            <option value="starter">Starter</option>
+                            <option value="growth">Growth</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                        <button class="btn btn-danger btn-sm" onclick="deactivateKey(${k.id})" style="margin-left:0.25rem"><i class="ri-forbid-line"></i></button>
+                    ` : ''}
+                </td>
+            </tr>
+        `).join('');
+    });
+}
+
+function changeTier(keyId, newTier) {
+    if (!newTier) return;
+    fetch(API + '/keys/' + keyId + '/tier' + q({new_tier: newTier}), {method: 'PATCH'}).then(r => r.json()).then(data => {
+        showToast(`Tier changed: ${data.old_tier} → ${data.new_tier}`, 'success');
+        loadKeys();
+    });
+}
+
+function deactivateKey(keyId) {
+    if (!confirm('Deactivate this API key?')) return;
+    fetch(API + '/keys/' + keyId + '/deactivate' + q({}), {method: 'PATCH'}).then(r => r.json()).then(() => {
+        showToast('Key deactivated', 'success');
+        loadKeys();
+    });
+}
+
+// ── Webhooks ──────────────────────────────────────────────
+
+function loadWebhooks() {
+    fetch(API + '/webhooks' + q({})).then(r => r.json()).then(data => {
+        document.getElementById('webhooksCount').textContent = `${data.total} webhooks`;
+        const tbody = document.getElementById('webhooksTable');
+        if (!data.webhooks.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="ri-webhook-line"></i>No webhooks</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.webhooks.map(w => `
+            <tr>
+                <td style="font-family:var(--font-mono);font-size:0.75rem;max-width:250px;overflow:hidden;text-overflow:ellipsis">${w.url}</td>
+                <td>${(w.events || []).map(e => '<span class="badge badge-free" style="margin-right:0.25rem">' + e + '</span>').join('')}</td>
+                <td style="font-family:var(--font-mono)">${w.api_key_id}</td>
+                <td style="font-family:var(--font-mono)">${w.delivery_count}</td>
+                <td style="font-family:var(--font-mono);${w.failed_count > 0 ? 'color:var(--danger)' : ''}">${w.failed_count}</td>
+                <td><span class="badge badge-${w.is_active ? 'active' : 'inactive'}">${w.is_active ? 'Active' : 'Inactive'}</span></td>
+            </tr>
+        `).join('');
+    });
+}
+
+// ── CRUD Actions ──────────────────────────────────────────
+
+function showAddServiceModal() {
+    document.getElementById('addServiceModal').classList.add('active');
+}
+
+function showAddPathModal(domain) {
+    document.getElementById('pathDomain').value = domain;
+    document.getElementById('addPathModal').classList.add('active');
+}
+
+function showAddContactModal(domain) {
+    document.getElementById('contactDomain').value = domain;
+    document.getElementById('addContactModal').classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+function createService() {
+    const body = {
+        domain: document.getElementById('newDomain').value,
+        name: document.getElementById('newName').value,
+        category: document.getElementById('newCategory').value,
+        billing_model: document.getElementById('newBillingModel').value,
+    };
+    fetch(API + '/services' + q({}), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    }).then(r => {
+        if (!r.ok) return r.json().then(d => { throw new Error(d.detail); });
+        return r.json();
+    }).then(() => {
+        closeModal('addServiceModal');
+        showToast('Service created', 'success');
+        loadServices();
+        loadOverview();
+    }).catch(e => showToast(e.message, 'error'));
+}
+
+function createPath() {
+    const domain = document.getElementById('pathDomain').value;
+    let steps;
+    try {
+        steps = JSON.parse(document.getElementById('newPathSteps').value);
+    } catch(e) {
+        showToast('Invalid JSON in steps', 'error');
+        return;
+    }
+    const body = {
+        path_type: document.getElementById('newPathType').value,
+        method: document.getElementById('newPathMethod').value,
+        difficulty: document.getElementById('newPathDifficulty').value,
+        estimated_time_seconds: parseInt(document.getElementById('newPathTime').value),
+        steps: steps,
+        notes: document.getElementById('newPathNotes').value || null,
+    };
+    fetch(API + '/services/' + domain + '/paths' + q({}), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    }).then(r => {
+        if (!r.ok) return r.json().then(d => { throw new Error(d.detail); });
+        return r.json();
+    }).then(() => {
+        closeModal('addPathModal');
+        showToast('Path created', 'success');
+        viewService(domain);
+    }).catch(e => showToast(e.message, 'error'));
+}
+
+function createContact() {
+    const domain = document.getElementById('contactDomain').value;
+    const body = {
+        channel: document.getElementById('newContactChannel').value,
+        target: document.getElementById('newContactTarget').value,
+        hours: document.getElementById('newContactHours').value || null,
+        expected_hold_minutes: parseInt(document.getElementById('newContactHold').value) || null,
+        notes: document.getElementById('newContactNotes').value || null,
+    };
+    fetch(API + '/services/' + domain + '/contacts' + q({}), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    }).then(r => {
+        if (!r.ok) return r.json().then(d => { throw new Error(d.detail); });
+        return r.json();
+    }).then(() => {
+        closeModal('addContactModal');
+        showToast('Contact created', 'success');
+        viewService(domain);
+    }).catch(e => showToast(e.message, 'error'));
+}
+
+function deleteService(domain) {
+    if (!confirm(`Delete ${domain} and all its paths/contacts?`)) return;
+    fetch(API + '/services/' + domain + q({}), {method: 'DELETE'}).then(r => r.json()).then(() => {
+        showToast('Service deleted', 'success');
+        backToServices();
+        loadOverview();
+    });
+}
+
+function deletePath(pathId, domain) {
+    if (!confirm('Delete this path?')) return;
+    fetch(API + '/paths/' + pathId + q({}), {method: 'DELETE'}).then(r => r.json()).then(() => {
+        showToast('Path deleted', 'success');
+        viewService(domain);
+    });
+}
+
+function deleteContact(contactId, domain) {
+    if (!confirm('Delete this contact?')) return;
+    fetch(API + '/contacts/' + contactId + q({}), {method: 'DELETE'}).then(r => r.json()).then(() => {
+        showToast('Contact deleted', 'success');
+        viewService(domain);
+    });
+}
+
+function verifyPath(pathId) {
+    fetch(API + '/paths/' + pathId + '/verify' + q({}), {method: 'POST'}).then(r => r.json()).then(() => {
+        showToast('Path verified — confidence reset to 95%', 'success');
+    });
+}
+
+// ── Toast ─────────────────────────────────────────────────
+
+function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+</script>
+</body>
+</html>
