@@ -5,6 +5,7 @@ import hmac
 import json
 import logging
 import re
+import time
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -13,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import (
+    BotRun,
     LifecyclePath,
     MonitorResult,
     Report,
@@ -34,6 +36,8 @@ REPORT_WINDOW_HOURS = 24
 
 # HTTP check settings
 CHECK_TIMEOUT = 15
+MAX_RETRIES = 2
+RETRY_BACKOFF = [2, 5]  # seconds between retries
 USER_AGENT = (
     "Mozilla/5.0 (compatible; CancelKit-Monitor/1.0; +https://cancelkit.dev/monitor)"
 )
@@ -61,27 +65,41 @@ def compute_dom_hash(html: str) -> str:
     return hashlib.sha256(tags_only.encode()).hexdigest()[:16]
 
 
-def check_url(url: str) -> dict:
-    """Check a single URL — return status, DOM hash, and any errors."""
-    result = {"url": url, "http_status": None, "dom_hash": None, "error": None}
-    try:
-        with httpx.Client(
-            timeout=CHECK_TIMEOUT,
-            follow_redirects=True,
-            headers={"User-Agent": USER_AGENT},
-        ) as client:
-            resp = client.get(url)
-            result["http_status"] = resp.status_code
-            if resp.status_code == 200 and "text/html" in resp.headers.get(
-                "content-type", ""
-            ):
-                result["dom_hash"] = compute_dom_hash(resp.text)
-    except httpx.TimeoutException:
-        result["error"] = "timeout"
-    except httpx.ConnectError:
-        result["error"] = "connection_failed"
-    except Exception as e:
-        result["error"] = str(e)[:500]
+def check_url(url: str, retries: int = MAX_RETRIES) -> dict:
+    """Check a single URL with retry logic — return status, DOM hash, errors, and timing."""
+    result = {
+        "url": url, "http_status": None, "dom_hash": None,
+        "error": None, "attempts": 1, "response_time_ms": None,
+    }
+    for attempt in range(1 + retries):
+        result["attempts"] = attempt + 1
+        start = time.time()
+        try:
+            with httpx.Client(
+                timeout=CHECK_TIMEOUT,
+                follow_redirects=True,
+                headers={"User-Agent": USER_AGENT},
+            ) as client:
+                resp = client.get(url)
+                result["response_time_ms"] = round((time.time() - start) * 1000)
+                result["http_status"] = resp.status_code
+                result["error"] = None
+                if resp.status_code == 200 and "text/html" in resp.headers.get(
+                    "content-type", ""
+                ):
+                    result["dom_hash"] = compute_dom_hash(resp.text)
+                # Success — no retry needed
+                return result
+        except httpx.TimeoutException:
+            result["error"] = "timeout"
+        except httpx.ConnectError:
+            result["error"] = "connection_failed"
+        except Exception as e:
+            result["error"] = str(e)[:500]
+        # Retry with backoff
+        if attempt < retries:
+            backoff = RETRY_BACKOFF[min(attempt, len(RETRY_BACKOFF) - 1)]
+            time.sleep(backoff)
     return result
 
 
@@ -368,3 +386,168 @@ def run_full_monitor_cycle(priority: str = "all"):
         }
     finally:
         db.close()
+
+
+def compute_service_health(db: Session, service: Service) -> dict:
+    """Compute a health score for a service based on monitoring data."""
+    paths = (
+        db.query(LifecyclePath)
+        .filter(LifecyclePath.service_id == service.id)
+        .all()
+    )
+    if not paths:
+        return {"health_score": 0, "grade": "unknown", "details": "no_paths"}
+
+    avg_confidence = sum(p.confidence for p in paths) / len(paths)
+
+    # Check recent monitor results (last 30 days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    recent_results = (
+        db.query(MonitorResult)
+        .filter(
+            MonitorResult.service_id == service.id,
+            MonitorResult.created_at >= cutoff,
+        )
+        .all()
+    )
+
+    total_checks = len(recent_results)
+    errors = sum(1 for r in recent_results if r.error or (r.http_status and r.http_status >= 400))
+    changes = sum(1 for r in recent_results if r.changed)
+
+    # Open stale flags
+    open_flags = (
+        db.query(StaleFlag)
+        .filter(
+            StaleFlag.service_id == service.id,
+            StaleFlag.resolved.is_(False),
+        )
+        .count()
+    )
+
+    # Health score: 100 base, penalized by issues
+    score = 100.0
+    score -= (1.0 - avg_confidence) * 30  # confidence penalty (up to 30)
+    if total_checks > 0:
+        error_rate = errors / total_checks
+        score -= error_rate * 25  # error rate penalty (up to 25)
+        change_rate = changes / total_checks
+        score -= change_rate * 15  # change rate penalty (up to 15)
+    score -= open_flags * 10  # stale flag penalty (10 each)
+    score = max(0, min(100, round(score, 1)))
+
+    if score >= 90:
+        grade = "A"
+    elif score >= 75:
+        grade = "B"
+    elif score >= 60:
+        grade = "C"
+    elif score >= 40:
+        grade = "D"
+    else:
+        grade = "F"
+
+    return {
+        "health_score": score,
+        "grade": grade,
+        "avg_confidence": round(avg_confidence, 3),
+        "total_paths": len(paths),
+        "recent_checks": total_checks,
+        "recent_errors": errors,
+        "recent_changes": changes,
+        "open_stale_flags": open_flags,
+    }
+
+
+def run_bot_cycle(db: Session, run_type: str, domains: list[str] | None = None) -> BotRun:
+    """Execute a full bot monitoring cycle with tracking."""
+    bot_run = BotRun(run_type=run_type, status="running")
+    db.add(bot_run)
+    db.commit()
+    db.refresh(bot_run)
+
+    start_time = time.time()
+    total_services = 0
+    total_urls = 0
+    total_changes = 0
+    total_errors = 0
+    total_stale = 0
+    total_webhooks = 0
+
+    try:
+        # 1. Confidence decay
+        apply_confidence_decay(db)
+
+        # 2. Community report intelligence
+        check_community_reports(db)
+
+        # 3. URL monitoring
+        query = db.query(Service)
+        if domains:
+            query = query.filter(Service.domain.in_(domains))
+        services = query.all()
+
+        for service in services:
+            total_services += 1
+            paths = (
+                db.query(LifecyclePath)
+                .filter(LifecyclePath.service_id == service.id)
+                .all()
+            )
+            for path in paths:
+                if not extract_urls_from_steps(path.steps):
+                    continue
+                results = run_monitor_check(db, service, path)
+                total_urls += len(results)
+                total_changes += sum(1 for r in results if r.changed)
+                total_errors += sum(1 for r in results if r.error)
+
+        db.commit()
+
+        # 4. Count new stale flags and deliver webhooks
+        new_flags = (
+            db.query(StaleFlag)
+            .filter(
+                StaleFlag.resolved.is_(False),
+                StaleFlag.created_at >= datetime.now(timezone.utc) - timedelta(minutes=5),
+            )
+            .all()
+        )
+        total_stale = len(new_flags)
+
+        for flag in new_flags:
+            svc = db.get(Service, flag.service_id)
+            payload = {
+                "event": "path_stale",
+                "domain": svc.domain if svc else "unknown",
+                "service_name": svc.name if svc else "unknown",
+                "reason": flag.reason,
+                "severity": flag.severity,
+                "path_id": flag.path_id,
+                "flagged_at": flag.created_at.isoformat() if flag.created_at else None,
+            }
+            deliver_webhooks(db, "path_stale", payload)
+            total_webhooks += 1
+
+        bot_run.status = "completed"
+    except Exception as exc:
+        bot_run.status = "failed"
+        bot_run.error_detail = str(exc)[:1000]
+        logger.exception("Bot run failed: %s", exc)
+
+    bot_run.services_checked = total_services
+    bot_run.urls_checked = total_urls
+    bot_run.changes_detected = total_changes
+    bot_run.errors = total_errors
+    bot_run.stale_flags_created = total_stale
+    bot_run.webhooks_fired = total_webhooks
+    bot_run.duration_seconds = round(time.time() - start_time, 2)
+    bot_run.completed_at = datetime.now(timezone.utc)
+    db.commit()
+
+    logger.info(
+        "Bot run %s (%s): %d services, %d URLs, %d changes, %d errors in %.1fs",
+        bot_run.id, run_type, total_services, total_urls,
+        total_changes, total_errors, bot_run.duration_seconds,
+    )
+    return bot_run

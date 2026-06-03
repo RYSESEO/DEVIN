@@ -196,3 +196,23 @@ class WebhookDelivery(Base):
     created_at = Column(DateTime, default=utcnow)
 
     subscription = relationship("WebhookSubscription")
+
+
+class BotRun(Base):
+    """Tracks each automated monitoring bot run."""
+
+    __tablename__ = "bot_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    run_type = Column(String, nullable=False)  # "high_priority", "full", "on_demand"
+    status = Column(String, nullable=False, default="running")  # running, completed, failed
+    services_checked = Column(Integer, default=0)
+    urls_checked = Column(Integer, default=0)
+    changes_detected = Column(Integer, default=0)
+    errors = Column(Integer, default=0)
+    stale_flags_created = Column(Integer, default=0)
+    webhooks_fired = Column(Integer, default=0)
+    duration_seconds = Column(Float, nullable=True)
+    error_detail = Column(Text, nullable=True)
+    started_at = Column(DateTime, default=utcnow)
+    completed_at = Column(DateTime, nullable=True)
