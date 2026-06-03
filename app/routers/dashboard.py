@@ -281,8 +281,8 @@ def get_monitoring_dashboard(db: Session = Depends(get_db)):
 
     stale_items = []
     for flag in flags:
-        service = db.query(Service).get(flag.service_id)
-        path = db.query(LifecyclePath).get(flag.path_id) if flag.path_id else None
+        service = db.get(Service, flag.service_id)
+        path = db.get(LifecyclePath, flag.path_id) if flag.path_id else None
         stale_items.append({
             "id": flag.id,
             "domain": service.domain if service else None,
@@ -303,7 +303,7 @@ def get_monitoring_dashboard(db: Session = Depends(get_db)):
 
     checks = []
     for c in recent_checks:
-        service = db.query(Service).get(c.service_id)
+        service = db.get(Service, c.service_id)
         checks.append({
             "domain": service.domain if service else None,
             "url": c.url_checked,
@@ -323,7 +323,7 @@ def get_monitoring_dashboard(db: Session = Depends(get_db)):
 
     low_conf_items = []
     for p in low_confidence:
-        service = db.query(Service).get(p.service_id)
+        service = db.get(Service, p.service_id)
         low_conf_items.append({
             "domain": service.domain if service else None,
             "path_type": p.path_type,
