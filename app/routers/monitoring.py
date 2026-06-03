@@ -3,10 +3,10 @@
 import secrets
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from app.auth import get_api_key, record_usage
+from app.auth import check_tier_gate, get_api_key, record_usage
 from app.database import get_db
 from app.models import (
     ApiKey,
@@ -184,12 +184,14 @@ def monitor_history(
 
 @router.post("/monitor/run")
 def trigger_monitor_check(
+    request: Request,
     domain: str = Query(...),
     background_tasks: BackgroundTasks = BackgroundTasks(),
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Manually trigger a monitor check for a specific service."""
+    """Manually trigger a monitor check for a specific service. Requires growth tier."""
+    check_tier_gate(request, api_key)
     record_usage(db, api_key, "/v1/monitor/run", domain)
 
     service = db.query(Service).filter(Service.domain == domain).first()
@@ -233,11 +235,13 @@ def trigger_monitor_check(
 @router.post("/monitor/verify/{domain}")
 def mark_verified(
     domain: str,
+    request: Request,
     path_type: str | None = Query(None),
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Mark a service/path as manually re-verified. Resets confidence and resolves stale flags."""
+    """Mark a service/path as manually re-verified. Requires growth tier."""
+    check_tier_gate(request, api_key)
     record_usage(db, api_key, "/v1/monitor/verify", domain)
 
     service = db.query(Service).filter(Service.domain == domain).first()
@@ -298,10 +302,12 @@ def mark_verified(
 
 @router.post("/monitor/decay")
 def trigger_confidence_decay(
+    request: Request,
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Manually trigger confidence decay across all paths."""
+    """Manually trigger confidence decay across all paths. Requires enterprise tier."""
+    check_tier_gate(request, api_key)
     record_usage(db, api_key, "/v1/monitor/decay")
     updated = apply_confidence_decay(db)
     return {"paths_decayed": updated}
@@ -309,10 +315,12 @@ def trigger_confidence_decay(
 
 @router.post("/monitor/report-check")
 def trigger_report_check(
+    request: Request,
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Manually trigger community report intelligence check."""
+    """Manually trigger community report intelligence check. Requires enterprise tier."""
+    check_tier_gate(request, api_key)
     record_usage(db, api_key, "/v1/monitor/report-check")
     flagged = check_community_reports(db)
     return {"services_auto_flagged": flagged}
@@ -323,6 +331,7 @@ def trigger_report_check(
 
 @router.post("/webhooks", status_code=201)
 def create_webhook(
+    request: Request,
     url: str = Query(..., min_length=10),
     events: str = Query(
         "path_stale,path_fixed",
@@ -331,7 +340,8 @@ def create_webhook(
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Subscribe to webhook notifications for path change events."""
+    """Subscribe to webhook notifications. Requires growth tier."""
+    check_tier_gate(request, api_key)
     record_usage(db, api_key, "/v1/webhooks")
 
     valid_events = {"path_stale", "path_fixed"}
@@ -368,10 +378,12 @@ def create_webhook(
 
 @router.get("/webhooks")
 def list_webhooks(
+    request: Request,
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """List your webhook subscriptions."""
+    """List your webhook subscriptions. Requires growth tier."""
+    check_tier_gate(request, api_key)
     record_usage(db, api_key, "/v1/webhooks")
 
     subs = (
@@ -397,10 +409,12 @@ def list_webhooks(
 @router.delete("/webhooks/{webhook_id}")
 def delete_webhook(
     webhook_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Delete a webhook subscription."""
+    """Delete a webhook subscription. Requires growth tier."""
+    check_tier_gate(request, api_key)
     record_usage(db, api_key, "/v1/webhooks")
 
     sub = (
@@ -422,11 +436,13 @@ def delete_webhook(
 @router.get("/webhooks/{webhook_id}/deliveries")
 def webhook_deliveries(
     webhook_id: int,
+    request: Request,
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """View delivery history for a webhook subscription."""
+    """View delivery history for a webhook subscription. Requires growth tier."""
+    check_tier_gate(request, api_key)
     record_usage(db, api_key, "/v1/webhooks/deliveries")
 
     sub = (
