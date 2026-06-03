@@ -1,5 +1,12 @@
 from pydantic_settings import BaseSettings
 
+TIER_LIMITS: dict[str, dict[str, int]] = {
+    "free": {"daily": 100, "monthly": 3_000},
+    "starter": {"daily": 500, "monthly": 10_000},
+    "growth": {"daily": 5_000, "monthly": 100_000},
+    "enterprise": {"daily": 50_000, "monthly": 1_000_000},
+}
+
 
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./cancelkit.db"

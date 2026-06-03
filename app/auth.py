@@ -1,7 +1,7 @@
 import secrets
 from datetime import datetime, timezone
 
-from fastapi import Depends, HTTPException, Security
+from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -17,6 +17,7 @@ def generate_api_key() -> str:
 
 
 def get_api_key(
+    request: Request,
     api_key: str | None = Security(api_key_header),
     db: Session = Depends(get_db),
 ) -> ApiKey:
@@ -40,7 +41,7 @@ def get_api_key(
             UsageRecord.timestamp >= today_start,
         )
         .scalar()
-    )
+    ) or 0
 
     monthly_count = (
         db.query(func.count(UsageRecord.id))
@@ -49,18 +50,36 @@ def get_api_key(
             UsageRecord.timestamp >= month_start,
         )
         .scalar()
-    )
+    ) or 0
+
+    # Attach rate-limit metadata so middleware can set headers
+    request.state.rate_limit_daily = key_record.daily_limit
+    request.state.rate_limit_monthly = key_record.monthly_limit
+    request.state.rate_limit_daily_used = daily_count
+    request.state.rate_limit_monthly_used = monthly_count
 
     if daily_count >= key_record.daily_limit:
         raise HTTPException(
             status_code=429,
             detail=f"Daily limit of {key_record.daily_limit} requests exceeded.",
+            headers={
+                "X-RateLimit-Limit": str(key_record.daily_limit),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": "daily",
+                "Retry-After": "3600",
+            },
         )
 
     if monthly_count >= key_record.monthly_limit:
         raise HTTPException(
             status_code=429,
             detail=f"Monthly limit of {key_record.monthly_limit} requests exceeded.",
+            headers={
+                "X-RateLimit-Limit": str(key_record.monthly_limit),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": "monthly",
+                "Retry-After": "86400",
+            },
         )
 
     return key_record

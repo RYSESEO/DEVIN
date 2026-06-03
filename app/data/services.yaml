@@ -3374,6 +3374,23 @@ services:
         target: "https://support.creditkarma.com/"
         auth_required: true
     paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.93
+        notes: "Free service — no paid subscription to cancel. Use account deletion to remove your account and data."
+        last_verified_at: "2026-05-15T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.creditkarma.com/account/settings"
+            description: "Go to Credit Karma > Account Settings."
+          - action: click
+            target: "Delete account"
+            description: "Click 'Delete account' at the bottom."
+          - action: click
+            target: "Confirm"
+            description: "Confirm deletion. Data is removed."
       - path_type: account_delete
         method: web
         estimated_time_seconds: 180
@@ -3610,6 +3627,23 @@ services:
         expected_hold_minutes: 20
         auth_required: true
     paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 180
+        difficulty: medium
+        confidence: 0.90
+        notes: "Free account — no recurring subscription. To remove your account, use account deletion."
+        last_verified_at: "2026-05-15T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.ticketmaster.com/member/edit_profile"
+            description: "Go to Ticketmaster > My Account > Edit Profile."
+          - action: click
+            target: "Delete Account"
+            description: "Click 'Delete Account' at bottom of page."
+          - action: click
+            target: "Confirm"
+            description: "Confirm deletion."
       - path_type: account_delete
         method: web
         estimated_time_seconds: 180
@@ -6493,6 +6527,20 @@ services:
         target: "https://support.khanacademy.org/"
         auth_required: false
     paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 60
+        difficulty: easy
+        confidence: 0.97
+        notes: "Free platform — no paid subscription. Delete your account to remove all data."
+        last_verified_at: "2026-05-25T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.khanacademy.org/settings/account"
+            description: "Go to Khan Academy Settings."
+          - action: click
+            target: "Delete account"
+            description: "Click 'Delete account'."
       - path_type: account_delete
         method: web
         estimated_time_seconds: 60
@@ -6659,7 +6707,7 @@ services:
   - domain: stubhub.com
     name: StubHub
     category: entertainment
-    billing_model: auto_renew
+    billing_model: free
     trial_policy: {duration_days: 0, auto_converts: false}
     refund_policy: {window_days: 0, partial_allowed: false, note: "Event-specific refund policies."}
     legal_flags: []
@@ -6670,6 +6718,20 @@ services:
         expected_hold_minutes: 15
         auth_required: true
     paths:
+      - path_type: cancel
+        method: web
+        estimated_time_seconds: 120
+        difficulty: easy
+        confidence: 0.94
+        notes: "No recurring subscription — free marketplace account. Deactivate to stop notifications and remove data."
+        last_verified_at: "2026-05-25T00:00:00Z"
+        steps:
+          - action: navigate
+            target: "https://www.stubhub.com/my/settings"
+            description: "Go to StubHub Settings."
+          - action: click
+            target: "Deactivate account"
+            description: "Deactivate or delete account."
       - path_type: account_delete
         method: web
         estimated_time_seconds: 120
