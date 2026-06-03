@@ -120,3 +120,79 @@ class Report(Base):
     status = Column(String, nullable=False, default="pending")
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class MonitorResult(Base):
+    """Tracks automated health checks for each service's URLs."""
+
+    __tablename__ = "monitor_results"
+
+    id = Column(Integer, primary_key=True, index=True)
+    service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
+    path_id = Column(Integer, ForeignKey("lifecycle_paths.id"), nullable=True)
+    url_checked = Column(String, nullable=False)
+    http_status = Column(Integer, nullable=True)
+    dom_hash = Column(String, nullable=True)
+    previous_dom_hash = Column(String, nullable=True)
+    changed = Column(Boolean, default=False)
+    error = Column(Text, nullable=True)
+    check_type = Column(String, nullable=False, default="http")
+    created_at = Column(DateTime, default=utcnow)
+
+    service = relationship("Service")
+    path = relationship("LifecyclePath")
+
+
+class StaleFlag(Base):
+    """Flags services/paths detected as potentially stale."""
+
+    __tablename__ = "stale_flags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
+    path_id = Column(Integer, ForeignKey("lifecycle_paths.id"), nullable=True)
+    reason = Column(String, nullable=False)
+    severity = Column(String, nullable=False, default="warning")
+    resolved = Column(Boolean, default=False)
+    resolved_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    service = relationship("Service")
+    path = relationship("LifecyclePath")
+
+
+class WebhookSubscription(Base):
+    """Webhook subscriptions for path change notifications."""
+
+    __tablename__ = "webhook_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=False)
+    url = Column(String, nullable=False)
+    events = Column(JSON, nullable=False)
+    secret = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    api_key = relationship("ApiKey")
+
+
+class WebhookDelivery(Base):
+    """Log of webhook delivery attempts."""
+
+    __tablename__ = "webhook_deliveries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    subscription_id = Column(
+        Integer, ForeignKey("webhook_subscriptions.id"), nullable=False
+    )
+    event_type = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+    http_status = Column(Integer, nullable=True)
+    success = Column(Boolean, default=False)
+    error = Column(Text, nullable=True)
+    attempts = Column(Integer, default=1)
+    created_at = Column(DateTime, default=utcnow)
+
+    subscription = relationship("WebhookSubscription")
