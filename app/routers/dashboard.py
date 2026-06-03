@@ -8,7 +8,17 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import ApiKey, ContactInfo, LifecyclePath, Report, Service, UsageRecord
+from app.models import (
+    ApiKey,
+    ContactInfo,
+    LifecyclePath,
+    MonitorResult,
+    Report,
+    Service,
+    StaleFlag,
+    UsageRecord,
+    WebhookSubscription,
+)
 
 router = APIRouter(prefix="/v1/dashboard", tags=["Dashboard"])
 
@@ -47,6 +57,24 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         .all()
     )
 
+    # Monitoring stats
+    total_checks = db.query(func.count(MonitorResult.id)).scalar() or 0
+    open_stale_flags = (
+        db.query(func.count(StaleFlag.id))
+        .filter(StaleFlag.resolved.is_(False))
+        .scalar()
+        or 0
+    )
+    active_webhooks = (
+        db.query(func.count(WebhookSubscription.id))
+        .filter(WebhookSubscription.is_active.is_(True))
+        .scalar()
+        or 0
+    )
+
+    # Average confidence
+    avg_confidence = db.query(func.avg(LifecyclePath.confidence)).scalar()
+
     return {
         "totals": {
             "services": total_services,
@@ -55,6 +83,12 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
             "reports": total_reports,
             "active_keys": total_keys,
             "total_api_calls": total_usage,
+        },
+        "monitoring": {
+            "total_checks": total_checks,
+            "open_stale_flags": open_stale_flags,
+            "active_webhooks": active_webhooks,
+            "avg_confidence": round(avg_confidence, 3) if avg_confidence else None,
         },
         "categories": {cat: count for cat, count in categories},
         "path_types": {pt: count for pt, count in path_types},
@@ -230,4 +264,75 @@ def get_usage_chart(
         "daily": dict(sorted(daily.items())),
         "endpoints": dict(endpoints.most_common(10)),
         "total": len(records),
+    }
+
+
+@router.get("/monitoring")
+def get_monitoring_dashboard(db: Session = Depends(get_db)):
+    """Monitoring overview for dashboard — stale flags, recent checks, confidence stats."""
+    # Open stale flags
+    flags = (
+        db.query(StaleFlag)
+        .filter(StaleFlag.resolved.is_(False))
+        .order_by(StaleFlag.created_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    stale_items = []
+    for flag in flags:
+        service = db.query(Service).get(flag.service_id)
+        path = db.query(LifecyclePath).get(flag.path_id) if flag.path_id else None
+        stale_items.append({
+            "id": flag.id,
+            "domain": service.domain if service else None,
+            "service_name": service.name if service else None,
+            "path_type": path.path_type if path else "all",
+            "reason": flag.reason,
+            "severity": flag.severity,
+            "flagged_at": flag.created_at.isoformat() if flag.created_at else None,
+        })
+
+    # Recent monitor checks
+    recent_checks = (
+        db.query(MonitorResult)
+        .order_by(MonitorResult.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    checks = []
+    for c in recent_checks:
+        service = db.query(Service).get(c.service_id)
+        checks.append({
+            "domain": service.domain if service else None,
+            "url": c.url_checked,
+            "http_status": c.http_status,
+            "changed": c.changed,
+            "error": c.error,
+            "checked_at": c.created_at.isoformat() if c.created_at else None,
+        })
+
+    # Lowest confidence paths
+    low_confidence = (
+        db.query(LifecyclePath)
+        .order_by(LifecyclePath.confidence.asc())
+        .limit(10)
+        .all()
+    )
+
+    low_conf_items = []
+    for p in low_confidence:
+        service = db.query(Service).get(p.service_id)
+        low_conf_items.append({
+            "domain": service.domain if service else None,
+            "path_type": p.path_type,
+            "confidence": p.confidence,
+            "last_verified_at": p.last_verified_at.isoformat() if p.last_verified_at else None,
+        })
+
+    return {
+        "stale_flags": stale_items,
+        "recent_checks": checks,
+        "lowest_confidence": low_conf_items,
     }

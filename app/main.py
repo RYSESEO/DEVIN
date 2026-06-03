@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.routers import cancel, dashboard, reports, service
+from app.routers import cancel, dashboard, monitoring, reports, service
 from app.seed import seed_database
 
 logging.basicConfig(level=logging.INFO)
@@ -50,6 +50,9 @@ app.add_middleware(
         "X-RateLimit-Remaining",
         "X-RateLimit-Reset",
         "Retry-After",
+        "X-Path-Confidence",
+        "X-CancelKit-Event",
+        "X-CancelKit-Signature",
     ],
 )
 
@@ -70,6 +73,7 @@ app.include_router(service.router)
 app.include_router(cancel.router)
 app.include_router(reports.router)
 app.include_router(dashboard.router)
+app.include_router(monitoring.router)
 
 
 @app.get("/", include_in_schema=False)
