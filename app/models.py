@@ -10,8 +10,8 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import JSON
 
 from app.database import Base
 

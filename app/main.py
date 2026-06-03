@@ -1,10 +1,13 @@
 import logging
+import os
+import time
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
@@ -12,10 +15,19 @@ from app.database import Base, SessionLocal, engine
 from app.routers import cancel, dashboard, monitoring, reports, service
 from app.seed import seed_database
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Structured logging
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+logger = logging.getLogger("cancelkit")
 
 WEB_DIR = Path(__file__).parent.parent / "web"
+
+# Whether to start the background scheduler (disable in tests)
+ENABLE_SCHEDULER = os.getenv("CANCELKIT_SCHEDULER", "true").lower() in ("true", "1", "yes")
 
 
 @asynccontextmanager
@@ -27,7 +39,28 @@ async def lifespan(app: FastAPI):
         logger.info("Database ready with %d services.", count)
     finally:
         db.close()
+
+    # Start background scheduler
+    scheduler = None
+    if ENABLE_SCHEDULER:
+        try:
+            from app.scheduler import start_scheduler
+
+            scheduler = start_scheduler()
+            logger.info("Background scheduler started.")
+        except Exception:
+            logger.exception("Failed to start scheduler — running without it.")
+
     yield
+
+    # Stop scheduler on shutdown
+    if scheduler:
+        try:
+            from app.scheduler import stop_scheduler
+
+            stop_scheduler()
+        except Exception:
+            logger.exception("Error stopping scheduler.")
 
 
 app = FastAPI(
@@ -53,20 +86,58 @@ app.add_middleware(
         "X-Path-Confidence",
         "X-CancelKit-Event",
         "X-CancelKit-Signature",
+        "X-Request-ID",
     ],
 )
 
 
 @app.middleware("http")
-async def rate_limit_headers(request: Request, call_next) -> Response:
-    response: Response = await call_next(request)
+async def request_middleware(request: Request, call_next) -> Response:
+    """Add request ID, timing, and rate-limit headers to every response."""
+    request_id = str(uuid.uuid4())[:8]
+    start = time.time()
+
+    try:
+        response: Response = await call_next(request)
+    except Exception:
+        logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error. Please try again."},
+        )
+
+    duration_ms = round((time.time() - start) * 1000, 1)
+    response.headers["X-Request-ID"] = request_id
+
+    # Rate-limit headers from auth middleware
     if hasattr(request.state, "rate_limit_daily"):
         daily_remaining = max(
             0, request.state.rate_limit_daily - request.state.rate_limit_daily_used - 1
         )
         response.headers["X-RateLimit-Limit"] = str(request.state.rate_limit_daily)
         response.headers["X-RateLimit-Remaining"] = str(daily_remaining)
+
+    # Log API requests (skip static files and health checks)
+    if not request.url.path.startswith("/static") and request.url.path != "/health":
+        logger.info(
+            "%s %s → %d (%sms) [%s]",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+            request_id,
+        )
+
     return response
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error. Please try again."},
+    )
 
 
 app.include_router(service.router)
@@ -97,7 +168,17 @@ async def dashboard_page():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "version": settings.api_version}
+    result = {"status": "ok", "version": settings.api_version}
+
+    if ENABLE_SCHEDULER:
+        try:
+            from app.scheduler import get_scheduler_status
+
+            result["scheduler"] = get_scheduler_status()
+        except Exception:
+            result["scheduler"] = {"running": False, "error": "import_failed"}
+
+    return result
 
 
 if WEB_DIR.exists():

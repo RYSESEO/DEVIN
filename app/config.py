@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings
 
 TIER_LIMITS: dict[str, dict[str, int]] = {
@@ -9,13 +11,13 @@ TIER_LIMITS: dict[str, dict[str, int]] = {
 
 
 class Settings(BaseSettings):
-    database_url: str = "sqlite:///./cancelkit.db"
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./cancelkit.db")
     api_title: str = "CancelKit"
     api_description: str = (
         "Subscription Intelligence API — cancel, pause, downgrade, refund, billing,"
         " contact, and churn signals for any subscription service."
     )
-    api_version: str = "0.2.0"
+    api_version: str = "0.3.0"
     default_daily_limit: int = 100
     default_monthly_limit: int = 3000
     cors_origins: list[str] = ["*"]

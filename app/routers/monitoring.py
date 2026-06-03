@@ -58,8 +58,8 @@ def get_stale_services(
 
     items = []
     for flag in flags:
-        service = db.query(Service).get(flag.service_id)
-        path = db.query(LifecyclePath).get(flag.path_id) if flag.path_id else None
+        service = db.get(Service, flag.service_id)
+        path = db.get(LifecyclePath, flag.path_id) if flag.path_id else None
         items.append(
             {
                 "id": flag.id,

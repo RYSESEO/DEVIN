@@ -343,7 +343,7 @@ def run_full_monitor_cycle(priority: str = "all"):
         )
 
         for flag in new_flags:
-            service = db.query(Service).get(flag.service_id)
+            service = db.get(Service, flag.service_id)
             payload = {
                 "event": "path_stale",
                 "domain": service.domain if service else "unknown",
