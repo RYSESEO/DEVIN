@@ -226,7 +226,11 @@ def get_signals(
     all_retention: list[dict] = []
     for p in paths:
         if p.retention_offers:
-            all_retention.extend(p.retention_offers)
+            for offer in p.retention_offers:
+                if isinstance(offer, dict):
+                    all_retention.append(offer)
+                elif isinstance(offer, str):
+                    all_retention.append({"type": "offer", "description": offer})
 
     difficulties = [p.difficulty for p in paths if p.path_type == "cancel"]
     worst = max(
