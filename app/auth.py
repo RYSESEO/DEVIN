@@ -24,6 +24,7 @@ TIER_GATES: dict[str, str] = {
     "/v1/monitor/verify": "growth",
     "/v1/monitor/decay": "enterprise",
     "/v1/monitor/report-check": "enterprise",
+    "/v1/monitor/bot/run": "enterprise",
 }
 
 

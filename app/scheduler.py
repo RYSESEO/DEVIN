@@ -14,12 +14,10 @@ from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.database import SessionLocal
-from app.models import LifecyclePath, Service
 from app.monitor import (
     apply_confidence_decay,
     check_community_reports,
-    extract_urls_from_steps,
-    run_monitor_check,
+    run_bot_cycle,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,36 +72,17 @@ def _job_report_intelligence():
 
 
 def _job_url_checks(domains: list[str] | None = None):
-    """Scheduled: run URL health checks for specified or all services."""
+    """Scheduled: run URL health checks with bot run tracking."""
+    run_type = "high_priority" if domains else "full"
     label = f"{len(domains)} priority" if domains else "all"
     logger.info("Scheduler: running URL checks for %s services.", label)
     try:
         with _get_db() as db:
-            query = db.query(Service)
-            if domains:
-                query = query.filter(Service.domain.in_(domains))
-            services = query.all()
-
-            total_checks = 0
-            changes = 0
-            for service in services:
-                paths = (
-                    db.query(LifecyclePath)
-                    .filter(LifecyclePath.service_id == service.id)
-                    .all()
-                )
-                for path in paths:
-                    if not extract_urls_from_steps(path.steps):
-                        continue
-                    results = run_monitor_check(db, service, path)
-                    total_checks += len(results)
-                    changes += sum(1 for r in results if r.changed)
-
-            db.commit()
+            bot_run = run_bot_cycle(db, run_type, domains)
             logger.info(
-                "Scheduler: URL checks complete — %d checked, %d changes.",
-                total_checks,
-                changes,
+                "Scheduler: bot run #%d complete — %d URLs, %d changes, %d errors.",
+                bot_run.id, bot_run.urls_checked,
+                bot_run.changes_detected, bot_run.errors,
             )
     except Exception:
         logger.exception("Scheduler: URL checks failed.")

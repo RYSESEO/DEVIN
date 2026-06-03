@@ -17,7 +17,7 @@ class Settings(BaseSettings):
         "Subscription Intelligence API — cancel, pause, downgrade, refund, billing,"
         " contact, and churn signals for any subscription service."
     )
-    api_version: str = "0.6.0"
+    api_version: str = "0.7.0"
     default_daily_limit: int = 100
     default_monthly_limit: int = 3000
     cors_origins: list[str] = ["*"]

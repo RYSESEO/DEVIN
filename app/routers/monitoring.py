@@ -10,6 +10,7 @@ from app.auth import check_tier_gate, get_api_key, record_usage
 from app.database import get_db
 from app.models import (
     ApiKey,
+    BotRun,
     LifecyclePath,
     MonitorResult,
     Service,
@@ -22,7 +23,9 @@ from app.monitor import (
     CONFIDENCE_FLOOR,
     apply_confidence_decay,
     check_community_reports,
+    compute_service_health,
     deliver_webhooks,
+    run_bot_cycle,
     run_monitor_check,
 )
 
@@ -324,6 +327,86 @@ def trigger_report_check(
     record_usage(db, api_key, "/v1/monitor/report-check")
     flagged = check_community_reports(db)
     return {"services_auto_flagged": flagged}
+
+
+@router.post("/monitor/bot/run")
+def trigger_bot_run(
+    request: Request,
+    run_type: str = Query("full", pattern=r"^(high_priority|full)$"),
+    db: Session = Depends(get_db),
+    api_key: ApiKey = Depends(get_api_key),
+):
+    """Trigger an on-demand bot monitoring run. Requires enterprise tier."""
+    check_tier_gate(request, api_key)
+    record_usage(db, api_key, "/v1/monitor/bot/run")
+
+    from app.scheduler import HIGH_PRIORITY_DOMAINS
+
+    domains = HIGH_PRIORITY_DOMAINS if run_type == "high_priority" else None
+    bot_run = run_bot_cycle(db, f"on_demand_{run_type}", domains)
+
+    return {
+        "run_id": bot_run.id,
+        "run_type": bot_run.run_type,
+        "status": bot_run.status,
+        "services_checked": bot_run.services_checked,
+        "urls_checked": bot_run.urls_checked,
+        "changes_detected": bot_run.changes_detected,
+        "errors": bot_run.errors,
+        "stale_flags_created": bot_run.stale_flags_created,
+        "duration_seconds": bot_run.duration_seconds,
+    }
+
+
+@router.get("/monitor/bot/status")
+def bot_status(
+    db: Session = Depends(get_db),
+    api_key: ApiKey = Depends(get_api_key),
+):
+    """Get monitoring bot status — last run, scheduler state, next scheduled run."""
+    record_usage(db, api_key, "/v1/monitor/bot/status")
+
+    last_run = db.query(BotRun).order_by(BotRun.started_at.desc()).first()
+
+    # Get scheduler info
+    try:
+        from app.scheduler import get_scheduler_status
+        scheduler = get_scheduler_status()
+    except Exception:
+        scheduler = {"running": False, "error": "import_failed"}
+
+    return {
+        "last_run": {
+            "id": last_run.id,
+            "run_type": last_run.run_type,
+            "status": last_run.status,
+            "services_checked": last_run.services_checked,
+            "urls_checked": last_run.urls_checked,
+            "changes_detected": last_run.changes_detected,
+            "errors": last_run.errors,
+            "duration_seconds": last_run.duration_seconds,
+            "started_at": last_run.started_at.isoformat() if last_run.started_at else None,
+            "completed_at": last_run.completed_at.isoformat() if last_run.completed_at else None,
+        } if last_run else None,
+        "scheduler": scheduler,
+    }
+
+
+@router.get("/monitor/health/{domain}")
+def get_service_health(
+    domain: str,
+    db: Session = Depends(get_db),
+    api_key: ApiKey = Depends(get_api_key),
+):
+    """Get health score for a specific service."""
+    record_usage(db, api_key, "/v1/monitor/health", domain)
+
+    service = db.query(Service).filter(Service.domain == domain).first()
+    if not service:
+        raise HTTPException(status_code=404, detail=f"Service '{domain}' not found.")
+
+    health = compute_service_health(db, service)
+    return {"domain": domain, "name": service.name, **health}
 
 
 # ── Webhook subscription endpoints ──────────────────────────────────
