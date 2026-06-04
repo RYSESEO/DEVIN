@@ -59,10 +59,12 @@ def api_key(client: TestClient):
     return resp.json()["key"]
 
 
+# Paid tiers can only be minted directly with an admin token (default "admin" in tests);
+# real customers reach them through Stripe Checkout.
 @pytest.fixture
 def enterprise_key(client: TestClient):
     resp = client.post(
-        "/v1/keys",
+        "/v1/keys?admin_token=admin",
         json={"name": "Enterprise Test", "email": "enterprise@example.com", "tier": "enterprise"},
     )
     assert resp.status_code == 201
@@ -72,7 +74,7 @@ def enterprise_key(client: TestClient):
 @pytest.fixture
 def growth_key(client: TestClient):
     resp = client.post(
-        "/v1/keys",
+        "/v1/keys?admin_token=admin",
         json={"name": "Growth Test", "email": "growth@example.com", "tier": "growth"},
     )
     assert resp.status_code == 201
@@ -82,7 +84,7 @@ def growth_key(client: TestClient):
 @pytest.fixture
 def starter_key(client: TestClient):
     resp = client.post(
-        "/v1/keys",
+        "/v1/keys?admin_token=admin",
         json={"name": "Starter Test", "email": "starter@example.com", "tier": "starter"},
     )
     assert resp.status_code == 201

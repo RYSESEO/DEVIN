@@ -1,10 +1,11 @@
+import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.auth import TIER_RANK, generate_api_key, get_api_key, record_usage
+from app.auth import TIER_RANK, apply_tier, generate_api_key, get_api_key, record_usage
 from app.config import TIER_LIMITS
 from app.database import get_db
 from app.models import ApiKey, Report, UsageRecord
@@ -18,6 +19,13 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/v1", tags=["Reports & Keys"])
+
+ADMIN_TOKEN = os.getenv("CANCELKIT_ADMIN_TOKEN", "admin")
+
+
+def _is_admin(token: str | None) -> bool:
+    """True if a valid admin token was supplied. Used to gate paid-tier provisioning."""
+    return bool(token) and token == ADMIN_TOKEN
 
 
 @router.post("/report", response_model=ReportResponse, status_code=201)
@@ -70,9 +78,15 @@ def contribute_path(
 @router.post("/keys", response_model=ApiKeyResponse, status_code=201)
 def create_api_key(
     body: ApiKeyCreate,
+    admin_token: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Create a new API key. Specify tier for rate limit allocation."""
+    """Create a new API key.
+
+    Public callers always receive a `free` key — paid tiers are reachable only by
+    paying through Stripe Checkout (`POST /v1/checkout/session`). Internal callers
+    may provision a paid tier directly by supplying a valid `admin_token`.
+    """
     existing = (
         db.query(ApiKey).filter(ApiKey.email == body.email, ApiKey.is_active.is_(True)).first()
     )
@@ -82,13 +96,24 @@ def create_api_key(
             detail="An active API key already exists for this email.",
         )
 
-    limits = TIER_LIMITS.get(body.tier, TIER_LIMITS["free"])
+    # Paid tiers require payment; only an admin token can mint one directly.
+    tier = body.tier
+    if tier != "free" and not _is_admin(admin_token):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Paid tiers require payment. Create a free key, then upgrade via "
+                "POST /v1/checkout/session."
+            ),
+        )
+
+    limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
 
     key = ApiKey(
         key=generate_api_key(),
         name=body.name,
         email=body.email,
-        tier=body.tier,
+        tier=tier,
         daily_limit=limits["daily"],
         monthly_limit=limits["monthly"],
     )
@@ -265,10 +290,21 @@ def revoke_api_key(
 @router.post("/keys/upgrade")
 def upgrade_key_tier(
     new_tier: str,
+    admin_token: str | None = Query(None),
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(get_api_key),
 ):
-    """Upgrade an API key to a higher tier. Cannot downgrade."""
+    """Internal/admin instant tier change. Cannot downgrade.
+
+    Self-serve customers must upgrade by paying through `POST /v1/checkout/session`;
+    this endpoint exists for internal provisioning and requires a valid `admin_token`.
+    """
+    if not _is_admin(admin_token):
+        raise HTTPException(
+            status_code=403,
+            detail="Self-serve upgrades go through POST /v1/checkout/session (Stripe).",
+        )
+
     valid_tiers = list(TIER_RANK.keys())
     if new_tier not in TIER_RANK:
         raise HTTPException(
@@ -286,13 +322,8 @@ def upgrade_key_tier(
             "Contact support for downgrades.",
         )
 
-    limits = TIER_LIMITS.get(new_tier, TIER_LIMITS["free"])
     old_tier = api_key.tier
-    api_key.tier = new_tier
-    api_key.daily_limit = limits["daily"]
-    api_key.monthly_limit = limits["monthly"]
-    api_key.updated_at = datetime.now(timezone.utc)
-    db.commit()
+    apply_tier(api_key, new_tier, db)
 
     return {
         "key_prefix": api_key.key[:10] + "...",
