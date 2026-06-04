@@ -32,6 +32,24 @@ def generate_api_key() -> str:
     return f"ck_{secrets.token_urlsafe(32)}"
 
 
+def apply_tier(api_key: ApiKey, tier: str, db: Session) -> ApiKey:
+    """Set an API key's tier and sync its rate limits. Commits the change.
+
+    Single source of truth for tier changes — used by the Stripe webhook and
+    the admin upgrade endpoint so limit allocation never drifts.
+    """
+    from app.config import TIER_LIMITS
+
+    limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
+    api_key.tier = tier
+    api_key.daily_limit = limits["daily"]
+    api_key.monthly_limit = limits["monthly"]
+    api_key.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(api_key)
+    return api_key
+
+
 def get_api_key(
     request: Request,
     api_key: str | None = Security(api_key_header),

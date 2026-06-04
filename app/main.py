@@ -13,7 +13,16 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.routers import admin, analytics, cancel, dashboard, monitoring, reports, service
+from app.routers import (
+    admin,
+    analytics,
+    cancel,
+    checkout,
+    dashboard,
+    monitoring,
+    reports,
+    service,
+)
 from app.seed import seed_database
 
 # Structured logging
@@ -103,6 +112,7 @@ app = FastAPI(
     openapi_tags=[
         {"name": "Subscription Intelligence", "description": "Core data endpoints"},
         {"name": "Cancel", "description": "Backwards-compatible cancel paths"},
+        {"name": "Billing", "description": "Stripe self-serve checkout, portal & webhook"},
         {"name": "Monitoring", "description": "Path freshness monitoring & webhooks"},
         {"name": "Analytics", "description": "API usage analytics, bot stats, service health"},
         {"name": "Dashboard", "description": "Developer dashboard data"},
@@ -202,6 +212,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(service.router)
 app.include_router(cancel.router)
 app.include_router(reports.router)
+app.include_router(checkout.router)
 app.include_router(dashboard.router)
 app.include_router(monitoring.router)
 app.include_router(analytics.router)

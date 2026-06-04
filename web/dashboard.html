@@ -1506,16 +1506,62 @@
             container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted);">No keys yet. Create one to start using the API.</p>';
             return;
         }
-        container.innerHTML = storedKeys.map((k, i) => `
+        container.innerHTML = storedKeys.map((k, i) => {
+            const isPaid = k.tier && k.tier !== 'free';
+            const billingBtn = isPaid
+                ? `<button class="key-copy" onclick="manageBilling(${i})">Manage billing</button>`
+                : `<button class="key-copy" onclick="upgradeKey(${i}, 'starter')">Upgrade → Starter</button>
+                   <button class="key-copy" onclick="upgradeKey(${i}, 'growth')">Upgrade → Growth</button>`;
+            return `
             <div class="key-display">
                 <span class="key-value">${k.key}</span>
                 <button class="key-copy" onclick="copyKey(${i})">Copy</button>
                 <button class="key-copy" onclick="useKey(${i})" style="background:var(--accent-dim); color:var(--accent); border-color:rgba(16,185,129,0.3);">Use</button>
             </div>
-            <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.75rem; padding-left:0.5rem;">
+            <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.5rem; padding-left:0.5rem;">
                 ${k.name} · ${k.email} · ${k.tier} tier · ${k.daily_limit}/day
             </div>
-        `).join('');
+            <div style="margin-bottom:0.75rem; padding-left:0.5rem;">${billingBtn}</div>
+        `;
+        }).join('');
+    }
+
+    // ── Billing (Stripe) ─────────────────────────────────────────────
+    async function upgradeKey(index, tier) {
+        const key = storedKeys[index].key;
+        try {
+            const res = await fetch(`${API_BASE}/v1/checkout/session`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-API-Key': key },
+                body: JSON.stringify({ tier })
+            });
+            const data = await res.json();
+            if (res.ok && data.checkout_url) {
+                window.location.href = data.checkout_url;
+            } else {
+                showToast(data.detail || 'Could not start checkout', 'error');
+            }
+        } catch (e) {
+            showToast('Network error', 'error');
+        }
+    }
+
+    async function manageBilling(index) {
+        const key = storedKeys[index].key;
+        try {
+            const res = await fetch(`${API_BASE}/v1/checkout/portal`, {
+                method: 'POST',
+                headers: { 'X-API-Key': key }
+            });
+            const data = await res.json();
+            if (res.ok && data.portal_url) {
+                window.location.href = data.portal_url;
+            } else {
+                showToast(data.detail || 'Could not open billing portal', 'error');
+            }
+        } catch (e) {
+            showToast('Network error', 'error');
+        }
     }
 
     function copyKey(index) {

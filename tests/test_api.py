@@ -565,7 +565,8 @@ class TestTierGating:
 
     def test_starter_tier_can_access_signals(self, client: TestClient):
         resp = client.post(
-            "/v1/keys", json={"name": "Starter", "email": "starter@test.com", "tier": "starter"}
+            "/v1/keys?admin_token=admin",
+            json={"name": "Starter", "email": "starter@test.com", "tier": "starter"},
         )
         key = resp.json()["key"]
         resp = client.get("/v1/signals/netflix.com", headers={"X-API-Key": key})
@@ -573,7 +574,8 @@ class TestTierGating:
 
     def test_starter_tier_can_access_billing(self, client: TestClient):
         resp = client.post(
-            "/v1/keys", json={"name": "Starter", "email": "starter2@test.com", "tier": "starter"}
+            "/v1/keys?admin_token=admin",
+            json={"name": "Starter", "email": "starter2@test.com", "tier": "starter"},
         )
         key = resp.json()["key"]
         resp = client.get("/v1/billing/netflix.com", headers={"X-API-Key": key})
@@ -581,7 +583,8 @@ class TestTierGating:
 
     def test_growth_tier_can_access_webhooks(self, client: TestClient):
         resp = client.post(
-            "/v1/keys", json={"name": "Growth", "email": "growth@test.com", "tier": "growth"}
+            "/v1/keys?admin_token=admin",
+            json={"name": "Growth", "email": "growth@test.com", "tier": "growth"},
         )
         key = resp.json()["key"]
         resp = client.get("/v1/webhooks", headers={"X-API-Key": key})
@@ -631,8 +634,10 @@ class TestKeyManagement:
         assert resp2.status_code == 401
 
     def test_upgrade_tier(self, client: TestClient, api_key: str):
+        # /v1/keys/upgrade is now an admin-only instant upgrade; customers use Checkout.
         resp = client.post(
-            "/v1/keys/upgrade?new_tier=starter", headers={"X-API-Key": api_key}
+            "/v1/keys/upgrade?new_tier=starter&admin_token=admin",
+            headers={"X-API-Key": api_key},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -640,20 +645,30 @@ class TestKeyManagement:
         assert data["old_tier"] == "free"
         assert data["daily_limit"] == 500
 
+    def test_upgrade_requires_admin_token(self, client: TestClient, api_key: str):
+        # Without an admin token, self-serve upgrades are pushed to Stripe Checkout.
+        resp = client.post(
+            "/v1/keys/upgrade?new_tier=starter", headers={"X-API-Key": api_key}
+        )
+        assert resp.status_code == 403
+
     def test_cannot_downgrade(self, client: TestClient):
         resp = client.post(
-            "/v1/keys", json={"name": "Growth", "email": "downgrade@test.com", "tier": "growth"}
+            "/v1/keys?admin_token=admin",
+            json={"name": "Growth", "email": "downgrade@test.com", "tier": "growth"},
         )
         key = resp.json()["key"]
         resp = client.post(
-            "/v1/keys/upgrade?new_tier=starter", headers={"X-API-Key": key}
+            "/v1/keys/upgrade?new_tier=starter&admin_token=admin",
+            headers={"X-API-Key": key},
         )
         assert resp.status_code == 400
         assert "cannot downgrade" in resp.json()["detail"].lower()
 
     def test_invalid_tier(self, client: TestClient, api_key: str):
         resp = client.post(
-            "/v1/keys/upgrade?new_tier=invalid", headers={"X-API-Key": api_key}
+            "/v1/keys/upgrade?new_tier=invalid&admin_token=admin",
+            headers={"X-API-Key": api_key},
         )
         assert resp.status_code == 400
 

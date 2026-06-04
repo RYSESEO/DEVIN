@@ -15,6 +15,14 @@ class ApiKeyCreate(BaseModel):
     )
 
 
+class CheckoutCreate(BaseModel):
+    tier: str = Field(
+        ...,
+        pattern=r"^(starter|growth)$",
+        description="Paid tier to subscribe to via Stripe Checkout.",
+    )
+
+
 class ReportCreate(BaseModel):
     service_domain: str = Field(..., min_length=1, max_length=255)
     report_type: str = Field(

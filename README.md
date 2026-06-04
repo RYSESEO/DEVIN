@@ -50,7 +50,7 @@ X-API-Key: ck_your_key_here
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/v1/keys` | Create an API key (supports tiers: free, starter, growth, enterprise) |
+| `POST` | `/v1/keys` | Create a free API key (paid tiers require Stripe Checkout) |
 | `GET` | `/v1/service/{domain}` | Full service intelligence (billing, contacts, all lifecycle paths) |
 | `GET` | `/v1/service/{domain}/path?type=cancel` | Structured path by type (cancel/pause/downgrade/refund/account_delete) |
 | `GET` | `/v1/cancel/{domain}` | Backwards-compatible cancel-only |
@@ -78,9 +78,23 @@ X-API-Key: ck_your_key_here
 | `DELETE` | `/v1/webhooks/{id}` | Delete a webhook |
 | `GET` | `/v1/webhooks/{id}/deliveries` | Delivery history |
 
+### Billing Endpoints (Stripe self-serve)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/v1/checkout/session` | Start a Stripe Checkout session to subscribe to `starter` or `growth` |
+| `POST` | `/v1/checkout/portal` | Open the Stripe Billing Portal to manage or cancel |
+| `POST` | `/v1/stripe/webhook` | Stripe webhook receiver (signature-verified) that drives tier changes |
+
+Paid tiers are reachable only by completing payment — a verified
+`checkout.session.completed` webhook upgrades the key; `customer.subscription.deleted`
+downgrades it back to `free`. Internal provisioning can still set a tier directly via
+`/v1/admin/keys/{id}/tier` or `?admin_token=`.
+
 ### Authentication
 
-All endpoints except `/v1/keys`, `/health`, `/dashboard/*`, and `/` require an `X-API-Key` header.
+All endpoints except `/v1/keys`, `/v1/stripe/webhook`, `/health`, `/dashboard/*`, and `/`
+require an `X-API-Key` header. (`/v1/stripe/webhook` is authenticated by its Stripe signature.)
 
 ```bash
 curl -H "X-API-Key: ck_your_key" http://localhost:8000/v1/cancel/spotify.com
@@ -101,6 +115,13 @@ export LOG_LEVEL=INFO
 
 # Disable background scheduler (for tests)
 export CANCELKIT_SCHEDULER=false
+
+# Stripe self-serve billing (test or live keys; never commit secrets)
+export CANCELKIT_STRIPE_SECRET_KEY=sk_test_...
+export CANCELKIT_STRIPE_WEBHOOK_SECRET=whsec_...
+export CANCELKIT_STRIPE_PRICE_STARTER=price_...   # $199/mo recurring price
+export CANCELKIT_STRIPE_PRICE_GROWTH=price_...    # $499/mo recurring price
+export CANCELKIT_APP_BASE_URL=https://cancelkit.dev
 ```
 
 ### Docker
@@ -130,4 +151,4 @@ ruff check .
 
 ## Version
 
-0.3.0 — 205 services, 23 endpoints, 91 tests, automated monitoring scheduler.
+0.3.0 — 205 services, automated monitoring scheduler, Stripe self-serve billing.

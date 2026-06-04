@@ -91,6 +91,9 @@ class ApiKey(Base):
     is_active = Column(Boolean, default=True)
     daily_limit = Column(Integer, nullable=False)
     monthly_limit = Column(Integer, nullable=False)
+    # Stripe linkage for self-serve billing (null until the key pays)
+    stripe_customer_id = Column(String, nullable=True, index=True)
+    stripe_subscription_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
